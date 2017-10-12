@@ -1,6 +1,6 @@
-# vault-setup
+# vaultops
 
-`vault-setup` is a simple command line utility which aims to simplify complex vault server setups. It provides a few subcommands that allow you to set up vault policies, mounts, roles and generate SSL certificates for a given `pki` vault backend with a single command.
+`vaultops` is a simple command line utility which aims to simplify complex vault server setups. It provides a few subcommands that allow you to set up vault policies, mounts, roles and generate SSL certificates for a given `pki` vault backend with a single command.
 
 **[NOTE] This utility is a PoC. Use it at your own risk!**
 
@@ -15,7 +15,7 @@ This utility provides a simple manifest file that can perform full `vault` setup
 See the output below:
 
 ```
-Usage: vault-setup [--version] [--help] <command> [<args>]
+Usage: vaultops [--version] [--help] <command> [<args>]
 
 Available commands are:
     backend    Manage vault backends
@@ -30,7 +30,7 @@ The utility reads the same environment variables as `vault` utility so you can r
 
 ## Manifest
 
-`vault-setup` allows you to define a manifest file which you can supply to particular subcommand. The manifest isa simple `YAML` file which contains a list of resources that are requested to be created in `vault`. A skeleton of full manifest file can be seen below:
+`vaultops` allows you to define a manifest file which you can supply to particular subcommand. The manifest isa simple `YAML` file which contains a list of resources that are requested to be created in `vault`. A skeleton of full manifest file can be seen below:
 
 ```yaml
 hosts:
@@ -97,10 +97,10 @@ mounts:
     max-lease-ttl: "876000h"
 ```
 
-You can supply the above manifest to the `vault-setup` as follows:
+You can supply the above manifest to the `vaultops` as follows:
 
 ```
-$ VAULT_ADDR="http://10.100.21.161:8200" ./vault-setup setup -config manifest.yaml
+$ VAULT_ADDR="http://10.100.21.161:8200" ./vaultops setup -config manifest.yaml
 [ info ] Attempting to initialize vault cluster
 [ info ] Vault successfully initialized
 [ info ] Key 1: XXX
@@ -147,7 +147,7 @@ Futhermore, for convenience `vault init` stores the `vault` keys in `.local` dir
 
 ## Subcommands
 
-Most of the `vault-setup` subcommands do not require using full manifest. You can simply pick particular resources and run the tool just against those. For example, say you want to mount some backends. You can specify the following manifest and use the `mount` subcommand as below.
+Most of the `vaultops` subcommands do not require using full manifest. You can simply pick particular resources and run the tool just against those. For example, say you want to mount some backends. You can specify the following manifest and use the `mount` subcommand as below.
 
 `mounts.yaml` example:
 
@@ -161,7 +161,7 @@ mounts:
 Run `mount` subcommand:
 
 ```
-$ VAULT_ADDR="http://10.100.21.161:8200" ./vault-setup mount -config mounts.yaml
+$ VAULT_ADDR="http://10.100.21.161:8200" ./vaultops mount -config mounts.yaml
 [ info ] Attempting to mount vault backends:
 [ info ] 	Type: pki Path: k8s-ca TTL: 876000h
 [ info ] Attempting to mount pki backend in path: k8s-ca
