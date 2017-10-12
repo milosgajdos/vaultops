@@ -1,0 +1,53 @@
+backends:
+  - name: "k8s-ca"
+    roles:
+      - name: "api-server"
+        allowed-domains: "api-server,kubernetes,kubernetes.default"
+        allow-bare-domains: true
+        allow-any-name: true
+        organization: "system:control-plane"
+      - name: "kube-controller-manager"
+        allow-bare-domains: true
+        allow-any-name: true
+        enforce-hostnames: false
+        organization: "system:control-plane"
+      - name: "kube-scheduler"
+        allow-bare-domains: true
+        allow-any-name: true
+        enforce-hostnames: false
+        organization: "system:control-plane"
+      - name: "kube-proxy"
+        allow-bare-domains: true
+        allow-any-name: true
+        enforce-hostnames: false
+        organization: "system:control-plane"
+      - name: "kubelet"
+        allowed-domains: "kubelet"
+        allow-bare-domains: true
+        allow-any-name: true
+        enforce-hostnames: false
+        organization: "system:nodes"
+      - name: "kubectl"
+        allowed-domains: "kubectl"
+        allow-bare-domains: true
+        allow-any-name: true
+        enforce-hostnames: false
+        organization: "system:masters"
+      - name: "auth"
+        allowed-domains: "auth"
+        allow-bare-domains: true
+        allow-any-name: true
+        enforce-hostnames: true
+    certificates:
+      - name: "root-ca"
+        root: true
+        common-name: "k8s-ca"
+        ttl: "876000h"
+        type: "internal"
+      - name: "k8s-ca"
+        common-name: "api-server"
+        ttl: "875000h"
+        ip-sans: "10.101.0.1,127.0.0.1,10.100.42.141"
+        alt-names: "kubernetes.default.svc.cluster.local"
+        role: "api-server"
+        store: true

@@ -1,0 +1,4 @@
+mounts:
+  - path: "k8s-ca"
+    type: "pki"
+    max-lease-ttl: "876000h"

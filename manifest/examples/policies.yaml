@@ -1,0 +1,12 @@
+policies:
+  - name: "k8s-ca"
+    rules: |
+      path "secret/k8s-ca/*" {
+         policy = "write"
+      }
+      path "k8s-ca/roles/*" {
+         policy = "write"
+      }
+      path "k8s-ca/issue/*" {
+        policy = "write"
+      }
