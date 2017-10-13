@@ -37,6 +37,12 @@ func (c *SetupCommand) runSetup(config, keyFile string) int {
 	initCmd := &InitCommand{
 		Meta: c.Meta,
 	}
+	// get hosts against which we want to run unseal command
+	hosts, err := getVaultHosts(config, "init")
+	if err != nil {
+		c.UI.Error(fmt.Sprintf("Failed to read vault init hosts: %v", err))
+		return 1
+	}
 	// init request options
 	req := &api.InitRequest{
 		SecretShares:      5,
@@ -46,18 +52,17 @@ func (c *SetupCommand) runSetup(config, keyFile string) int {
 	}
 	// runt Vault Init
 	c.UI.Info(fmt.Sprintf("Attempting to initialize vault cluster"))
-	if ret := initCmd.runInit(req); ret != 0 {
+	if ret := initCmd.runInit(hosts, req); ret != 0 {
 		return ret
 	}
-	c.UI.Info(fmt.Sprintf(""))
 
 	unsealCmd := &UnsealCommand{
 		Meta: c.Meta,
 	}
 	// get hosts against which we want to run unseal command
-	hosts, err := getVaultHosts(config)
+	hosts, err = getVaultHosts(config, "unseal")
 	if err != nil {
-		c.UI.Error(fmt.Sprintf("Failed to read vault hosts: %v", err))
+		c.UI.Error(fmt.Sprintf("Failed to read vault unseal hosts: %v", err))
 		return 1
 	}
 	// if keyFile is not provided try to read the loca keys
@@ -75,7 +80,6 @@ func (c *SetupCommand) runSetup(config, keyFile string) int {
 	if ret := unsealCmd.runUnseal(hosts, keys); ret != 0 {
 		return ret
 	}
-	c.UI.Info(fmt.Sprintf(""))
 
 	mountCmd := &MountCommand{
 		Meta: c.Meta,
@@ -91,7 +95,6 @@ func (c *SetupCommand) runSetup(config, keyFile string) int {
 	if ret := mountCmd.runMount(mounts); ret != 0 {
 		return ret
 	}
-	c.UI.Info(fmt.Sprintf(""))
 
 	beCmd := &BackendCommand{
 		Meta: c.Meta,
@@ -107,7 +110,6 @@ func (c *SetupCommand) runSetup(config, keyFile string) int {
 	if ret := beCmd.runBackend(backends); ret != 0 {
 		return ret
 	}
-	c.UI.Info(fmt.Sprintf(""))
 
 	policyCmd := &PolicyCommand{
 		Meta: c.Meta,
@@ -123,7 +125,6 @@ func (c *SetupCommand) runSetup(config, keyFile string) int {
 	if ret := policyCmd.runPolicy(policies); ret != 0 {
 		return ret
 	}
-	c.UI.Info(fmt.Sprintf(""))
 
 	return 0
 }

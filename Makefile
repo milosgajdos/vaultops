@@ -32,6 +32,6 @@ test:
 	done
 
 build: builddir
-	go build -ldflags="-s -w" -o "$(BUILDPATH)/vault-config"
+	go build -ldflags="-s -w" -o "$(BUILDPATH)/vaultops"
 
 .PHONY: clean

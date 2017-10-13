@@ -39,7 +39,7 @@ func Commands() map[string]cli.CommandFactory {
 			WarnColor:  cli.UiColorYellow,
 			Ui: &cli.PrefixedUi{
 				InfoPrefix:  "[ info ] ",
-				ErrorPrefix: "[ errpr ] ",
+				ErrorPrefix: "[ error ] ",
 				WarnPrefix:  "[ warn ] ",
 				Ui: &cli.BasicUi{
 					Writer:      os.Stdout,

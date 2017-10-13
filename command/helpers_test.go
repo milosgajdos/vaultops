@@ -93,23 +93,47 @@ func Test_getVaultHosts(t *testing.T) {
 		"http://192.168.1.101:8200",
 		"http://192.168.1.102:8200",
 	}
-	// raw data
+
+	// init hosts raw data
 	data := `hosts:
-  - ` + vaultHosts[0] + `
-  - ` + vaultHosts[1]
+  init:
+    - ` + vaultHosts[0] + `
+    - ` + vaultHosts[1]
 
 	f, err := makeTestFile([]byte(data))
 	defer os.Remove(f)
 	assert.NoError(t, err)
-	hosts, err := getVaultHosts(f)
+	hosts, err := getVaultHosts(f, "init")
 	assert.NoError(t, err)
 
 	for i := 0; i < len(hosts); i++ {
 		assert.Equal(t, hosts[i], vaultHosts[i])
 	}
-	// garbage file path causes error
-	hosts, err = getVaultHosts("foobar/dfd")
+
+	// unseal hosts raw data
+	data = `hosts:
+  unseal:
+    - ` + vaultHosts[0] + `
+    - ` + vaultHosts[1]
+
+	f, err = makeTestFile([]byte(data))
+	defer os.Remove(f)
+	assert.NoError(t, err)
+	hosts, err = getVaultHosts(f, "unseal")
+	assert.NoError(t, err)
+
+	for i := 0; i < len(hosts); i++ {
+		assert.Equal(t, hosts[i], vaultHosts[i])
+	}
+
+	// unsupported action causes error
+	hosts, err = getVaultHosts(f, "foobar")
 	assert.Error(t, err)
+
+	// garbage file path causes error
+	hosts, err = getVaultHosts("foobar/dfd", "foobar")
+	assert.Error(t, err)
+
 	// no parsed hosts returns error
 	data = `foo:
   - bar: foobar
@@ -117,7 +141,7 @@ func Test_getVaultHosts(t *testing.T) {
 	f2, err := makeTestFile([]byte(data))
 	defer os.Remove(f2)
 	assert.NoError(t, err)
-	hosts, err = getVaultHosts(f2)
+	hosts, err = getVaultHosts(f2, "foobar")
 	assert.Error(t, err)
 }
 

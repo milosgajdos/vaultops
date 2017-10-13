@@ -6,8 +6,13 @@ import (
 	yaml "gopkg.in/yaml.v2"
 )
 
-// Hosts are vault API servers
-type Hosts []string
+// Hosts are vault server hosts to initialize and unseal
+type Hosts struct {
+	// Init is a slice of vault servers to initialize
+	Init []string `yaml:"init,omitempty"`
+	// Unseal is a slice of vault servers to unseal
+	Unseal []string `yaml:"unseal,omitempty"`
+}
 
 // Mounts provides vault mount configurations
 type Mounts []struct {
@@ -81,7 +86,7 @@ type Policies []struct {
 
 // Manifest holds vault setup configuration
 type Manifest struct {
-	Hosts    `yaml:"hosts"`
+	Hosts    `yaml:"hosts,omitempty"`
 	Mounts   `yaml:"mounts,omitempty"`
 	Backends `yaml:"backends,omitempty"`
 	Policies `yaml:"policies,omitempty"`

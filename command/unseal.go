@@ -64,7 +64,7 @@ func (c *UnsealCommand) Run(args []string) int {
 // runHosts retrieves a list of hosts agsints which the Init cmd should be run from configuration and returns it
 func (c *UnsealCommand) getRunHosts(config string) ([]string, error) {
 	if config != "" {
-		hosts, err := getVaultHosts(config)
+		hosts, err := getVaultHosts(config, "unseal")
 		if err != nil {
 			return nil, err
 		}

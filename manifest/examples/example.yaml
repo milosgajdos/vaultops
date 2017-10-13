@@ -1,7 +1,12 @@
 hosts:
-  - "http://10.100.21.161:8200"
-  - "http://10.100.21.162:8200"
-  - "http://10.100.21.163:8200"
+  # vault hosts to initialize
+  init:
+    - "http://10.100.21.161:8200"
+  # vault hosts to unseal
+  unseal:
+    - "http://10.100.21.161:8200"
+    - "http://10.100.21.162:8200"
+    - "http://10.100.21.163:8200"
 # vault mounts
 mounts:
   - path: "k8s-ca"

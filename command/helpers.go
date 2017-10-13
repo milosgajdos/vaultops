@@ -52,17 +52,29 @@ func writeVaultKeys(dir, fileName string, v *VaultKeys) error {
 
 // getVaultHosts parses configguration file in path and returns a slice of hosts
 // If either the file can not be parsed or there are no hosts found it returns error
-func getVaultHosts(path string) ([]string, error) {
+func getVaultHosts(path, action string) ([]string, error) {
 	var hosts []string
 	m, err := manifest.Parse(path)
 	if err != nil {
 		return nil, err
 	}
 	// if no hosts found, return erro
-	if len(m.Hosts) == 0 {
-		return nil, fmt.Errorf("No vault hosts found in %s", path)
+	switch action {
+	case "init":
+		if len(m.Hosts.Init) == 0 {
+			return nil, fmt.Errorf("No vault hosts to initialize found in %s", path)
+		}
+
+		hosts = append(hosts, m.Hosts.Init...)
+	case "unseal":
+		if len(m.Hosts.Unseal) == 0 {
+			return nil, fmt.Errorf("No vault hosts to unseal found in %s", path)
+		}
+
+		hosts = append(hosts, m.Hosts.Unseal...)
+	default:
+		return nil, fmt.Errorf("Unsupported action: %s", action)
 	}
-	hosts = append(hosts, m.Hosts...)
 
 	return hosts, nil
 }

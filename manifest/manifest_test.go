@@ -32,7 +32,8 @@ func TestParse(t *testing.T) {
 	// invalid config
 	invalid := `
 hosts:
-  foo: bar
+  init:
+    foo: bar
 `
 	invPath, err := makeTestFile([]byte(invalid))
 	defer os.Remove(invPath)
@@ -43,8 +44,9 @@ hosts:
 	// valid config
 	valid := `
 hosts:
-  - one
-  - two
+  init:
+    - one
+    - two
 mounts:
   - path: vPath
     type: pki
@@ -54,7 +56,7 @@ mounts:
 	c, err = Parse(vPath)
 	assert.NoError(t, err)
 	assert.NotNil(t, c)
-	assert.EqualValues(t, c.Hosts, []string{"one", "two"})
+	assert.EqualValues(t, c.Hosts.Init, []string{"one", "two"})
 	assert.EqualValues(t, c.Mounts[0].Path, "vPath")
 	assert.EqualValues(t, c.Mounts[0].Type, "pki")
 }
