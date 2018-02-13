@@ -29,7 +29,7 @@ func (c *InitCommand) Run(args []string) int {
 	flags.IntVar(&shares, "key-shares", 5, "")
 	flags.IntVar(&threshold, "key-threshold", 3, "")
 	flags.StringVar(&config, "config", "", "")
-	flags.BoolVar(&store, "store", true, "")
+	flags.BoolVar(&store, "store", false, "")
 	if err := flags.Parse(args); err != nil {
 		return 1
 	}
@@ -59,7 +59,7 @@ func (c *InitCommand) Run(args []string) int {
 		c.UI.Info(fmt.Sprintf("\t%s", host))
 	}
 
-	return c.runInit(hosts, req)
+	return c.runInit(hosts, req, store)
 }
 
 // runHosts retrieves a list of hosts agsints which the Init cmd should be run from configuration and returns it
@@ -123,7 +123,7 @@ func (c *InitCommand) runInitStatus(hosts []string) int {
 }
 
 // runInit initializes vault server and returns 0 if successful
-func (c *InitCommand) runInit(hosts []string, req *api.InitRequest) int {
+func (c *InitCommand) runInit(hosts []string, req *api.InitRequest, store bool) int {
 	// init response
 	type res struct {
 		host string
@@ -163,11 +163,13 @@ func (c *InitCommand) runInit(hosts []string, req *api.InitRequest) int {
 		}
 		c.UI.Info(fmt.Sprintf("Root Token: %s", initRes.resp.RootToken))
 
-		// write the retrieved vault keys into .local/vault.json
-		vk := &VaultKeys{RootToken: initRes.resp.RootToken, MasterKeys: initRes.resp.Keys}
-		if err := writeVaultKeys(localDir, localFile, vk); err != nil {
-			c.UI.Error(fmt.Sprintf("Failed to store vault keys: %v", err))
-			return 1
+		if store {
+			// write the retrieved vault keys into .local/vault.json
+			vk := &VaultKeys{RootToken: initRes.resp.RootToken, MasterKeys: initRes.resp.Keys}
+			if err := writeVaultKeys(localDir, localFile, vk); err != nil {
+				c.UI.Error(fmt.Sprintf("Failed to store vault keys: %v", err))
+				return 1
+			}
 		}
 	}
 
@@ -192,6 +194,7 @@ Usage: cam-vault init [options]
 
     This command connects to a Vault server and initializes it for the
     first time. It sets up initial set of master keys and backend store.
+    Unless overridden init stores vault root token and keys on local filesystem
 
     When init is called on already initialized server it will return error
 
@@ -203,7 +206,7 @@ init Options:
     -key-shares=5 		Number of key shares to split the master key into
     -key-threshold=3		Number of key shares required to reconstruct the master key
     -config			Path to a config file which contains a list of vault servers
-    -store			Store vault keys locally on the workstation
+    -store			Store vault keys on the local filesystem
 
 `
 	return strings.TrimSpace(helpText)

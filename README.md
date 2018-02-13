@@ -1,6 +1,10 @@
-**[NOTE] This utility is a PoC! Use it at your own risk!**
-
 # vaultops
+
+[![GoDoc](https://godoc.org/github.com/milosgajdos83/vaultops?status.svg)](https://godoc.org/github.com/milosgajdos83/vaultops)
+[![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Travis CI](https://travis-ci.org/milosgajdos83/vaultops.svg?branch=master)](https://travis-ci.org/milosgajdos83/vaultops)
+[![Go Report Card](https://goreportcard.com/badge/milosgajdos83/vaultops)](https://goreportcard.com/report/github.com/milosgajdos83/vaultops)
+[![codecov](https://codecov.io/gh/milosgajdos83/vaultops/branch/master/graph/badge.svg)](https://codecov.io/gh/milosgajdos83/vaultops)
 
 `vaultops` is a simple command line utility which aims to simplify complex [vault](https://www.vaultproject.io/) server setups. The tool provides a few subcommands which allows the user to performa various setup tasks (creating vault policies, mounting backends etc.) using a single command.
 
@@ -8,24 +12,26 @@
 
 `vault` setup typically requires a lot of manual tasks:
 - initializing vault server
-- unsealing vault server or multiple servers in the same clsuter
-- mounting backends of different types
-- creating backend roles
+- unsealing vault server(s) in vault cluster
+- mounting different kinds of vault backends
+- creating vault backend roles
 - generating SSL certificates
-- configuring policies
+- configuring vault policies
 
-All of these tasks are usually performed via the `vault` cli utility which requires writing a lot of `shell` scripts that often grow into unmanageable full fledged monster `shell` programs which have no type checking or proper error handling.
+All of these tasks are usually performed using the well known `vault` cli tool which requires writing a lot of `shell` scripts which often grow into unmanageable full fledged monsters which have no type checking or proper error handling.
 
-`vaultops` utility addresses this problem by providing a simple manifest file which can be used to specify all the tasks required to perform a full `vault` setup once the `vault` is running. `vaultops` reads the manifest file and performs all the actions requsted by user. `vaultops` interacts directly with `vault` API and performs the requested tasks concurrently whenever possible. The user can choose to perform a full set up or only particular setup actions.`vaultops` provides a few subcommands.
+`vaultops` utility addresses this problem by providing a simple manifest file which can be used to specify all the tasks required to perform `vault` setup once the `vault` is running. `vaultops` reads the manifest file and performs all the actions requsted by user. `vaultops` interacts with `vault` via REST API and performs the requested tasks concurrently whenever possible. The user can choose to perform a full setup or only selected setup actions.`vaultops` provides several commands.
 
 # Quick start
 
-Install the project and run the tests:
+Fetch the project:
+
 ```
 $ go get github.com/milosgajdos83/vaultops
 ```
 
 Run the tests
+
 ```
 $ cd $GOPATH/src/github.com/milosgajdos83/vaultops
 $ make test
@@ -38,6 +44,7 @@ ok  	github.com/milosgajdos83/vaultops/manifest	0.015s	coverage: 100.0% of state
 ```
 
 Build the binary:
+
 ```
 $ make build
 mkdir -p ./_build
@@ -60,11 +67,11 @@ Available commands are:
     unseal     Unseal a Vault server
 ```
 
-`vaultop` reads the same environment as `vault` utility so you can rely on the familiar `$VAULT_` environment variables when spcifying your `vault` server URL and authentication token.
+`vaultop` reads the environment variables just like `vault` utility so you can rely on the familiar `$VAULT_` environment variables when specifying `vault` server URL and authentication token.
 
 # Manifest
 
-`vaultops` allows you to define a manifest file which can be supplied to particular subcommand. The manifest is a simple `YAML` file which specifies a list of `vault` hosts or `vault` resources that are requested to be created in `vault`. A skeleton of a sample manifest file can be seen below:
+`vaultops` allows you to define a manifest file which can be supplied to its commands. The manifest is a simple `YAML` file which specifies a list of `vault` hosts and `vault` resources that are requested to be created in `vault`. A sample manifest file can be seen below:
 
 ```yaml
 # vault hosts
@@ -177,9 +184,7 @@ $ VAULT_ADDR="http://10.100.21.161:8200" ./vaultops setup -config manifest.yaml
 
 ### Security
 
-**READ CAREFULLY**
-
-As you may have noticed, when running the tool, `vaultops` initializes the `vault` and the prints the `vault` keys into . `standard output`. Furthermore, purely for convenience `init` command stores the `vault` keys in `.local` directory of your corrent working directory in a predefined `json` file:
+`init` command allows to store `vault` keys on local filesystem in `.local` directory of your current working directory for convenience using `-store` cli switch in a predefied `json` file which looks as follows:
 
 ```json
 {
@@ -194,13 +199,13 @@ As you may have noticed, when running the tool, `vaultops` initializes the `vaul
 }
 ```
 
-**This is not what you should do in real life!. No secrets should touch your filesystem!**. In real life you would store the `vault` keys in secure location. The reason why the keys are stored locally is because currently they are read by `unseal` subcommand if no other key file is specified via its `-key-file` switch. `vaultops` attempts to unseal every single `vault` server specified in the manifest using the keys specified via the earlier mentioned cli flag.
+**This is not what you should do when unsealing your vault clusters unless you are unsealing a cluster for development pruposes! Remember, no sensitive data should ever touch the filesystem!**.
 
-**Storing the keys on the local filesystem will be optional in the future release!**
+In real life you should store the `vault` keys in a secure location. The reason why `vaultops` provides an option to store the keys on local filesystem is because the `unseal` command attempts to read the keys from local filesystem if no other key file is specified via `-key-file` switch. `vaultops` attempts to unseal every `vault` server specified in the manifest file.
 
 ## vaultops commands
 
-Most of the `vaultops` commands do not require using full manifest. User can simply pick only some extracted parts and run the tool just against those. For example, say you only want to mount some backends. Given the `vault` is initialized and unsealed, you can specify the following `vaultops` manifest and run the `mount` command as below:
+Most of the `vaultops` commands do not require using complete manifest. To run some of the commands you only need some parts of manifest. For example, say you only want to mount some backends. Given the `vault` is initialized and unsealed, you can specify the following `vaultops` manifest and run the `mount` command as shown below:
 
 `mounts.yaml` example:
 
@@ -222,7 +227,7 @@ $ VAULT_ADDR="http://10.100.21.161:8200" ./vaultops mount -config mounts.yaml
 [ info ] All requested vault backends successfully mounted
 ```
 
-Similarly, you run `policy` command with only the policies manifest. You can find some examples in [examples]() subdirectory of the `vaultops` project source tree.
+Similarly, you can run `policy` command with only the policies part of the full manifest. You can find some examples in [examples](examples) subdirectory of the `vaultops` project.
 
 # TODO
 

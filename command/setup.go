@@ -20,20 +20,22 @@ type SetupCommand struct {
 func (c *SetupCommand) Run(args []string) int {
 	var config string
 	var keyFile string
+	var store bool
 	// create command flags
 	flags := c.Meta.FlagSet("setup", FlagSetDefault)
 	flags.Usage = func() { c.UI.Info(c.Help()) }
 	flags.StringVar(&config, "config", "", "")
 	flags.StringVar(&keyFile, "key-file", "", "")
+	flags.BoolVar(&store, "store", false, "")
 	if err := flags.Parse(args); err != nil {
 		return 1
 	}
 
-	return c.runSetup(config, keyFile)
+	return c.runSetup(config, keyFile, store)
 }
 
 // runsetup setupializes vault server and returns 0 if successful
-func (c *SetupCommand) runSetup(config, keyFile string) int {
+func (c *SetupCommand) runSetup(config, keyFile string, store bool) int {
 	initCmd := &InitCommand{
 		Meta: c.Meta,
 	}
@@ -52,7 +54,7 @@ func (c *SetupCommand) runSetup(config, keyFile string) int {
 	}
 	// runt Vault Init
 	c.UI.Info(fmt.Sprintf("Attempting to initialize vault cluster"))
-	if ret := initCmd.runInit(hosts, req); ret != 0 {
+	if ret := initCmd.runInit(hosts, req, store); ret != 0 {
 		return ret
 	}
 
@@ -151,6 +153,7 @@ General Options:
 setup Options:
 
     -config			Path to a config file which contains a list of vault servers and setup actions
+    -store			Store vault keys on the local filesystem
 
 `
 	return strings.TrimSpace(helpText)

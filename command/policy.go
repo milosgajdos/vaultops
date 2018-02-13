@@ -62,7 +62,7 @@ func (c *PolicyCommand) runPolicyList(policy string) int {
 		}
 
 		for i := range policies {
-			c.UI.Info(fmt.Sprintf("%s", policies[i]))
+			c.UI.Info(fmt.Sprintf("\n%s", policies[i]))
 		}
 	default:
 		p, err := client.Sys().GetPolicy(policy)
