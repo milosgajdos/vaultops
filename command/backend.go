@@ -1,11 +1,11 @@
 package command
 
 import (
-	"encoding/json"
 	"fmt"
 	"strings"
 
 	"github.com/hashicorp/vault/api"
+	"github.com/milosgajdos83/vaultops/manifest"
 )
 
 // BackendCommand allows to configure vault backends
@@ -34,10 +34,15 @@ func (c *BackendCommand) Run(args []string) int {
 		return c.runBackendList(list)
 	}
 
-	backends, err := getVaultBackends(config)
-	if err != nil {
-		c.UI.Error(fmt.Sprintf("Failed to read vault backends: %v", err))
-		return 1
+	var backends manifest.Backends
+	if config != "" {
+		m, err := manifest.Parse(config)
+		if err != nil {
+			c.UI.Error(fmt.Sprintf("Failed to parse config %s: %s", config, err))
+			return 1
+		}
+		// get mounts
+		backends = m.GetBackends()
 	}
 
 	c.UI.Info(fmt.Sprintf("Attempting to configure vault backends:"))
@@ -71,10 +76,18 @@ func (c *BackendCommand) runBackendList(path string) int {
 	return 0
 }
 
-func (c *BackendCommand) writeRoles(v *api.Client, roles []*VaultRole) error {
+func (c *BackendCommand) writeRoles(v *api.Client, backend string, roles manifest.Roles) error {
 	for _, role := range roles {
 		c.UI.Info(fmt.Sprintf("Attempting to create role: %s", role.Name))
-		if _, err := v.Logical().Write(role.Backend+"/roles/"+role.Name, role.Config); err != nil {
+		// TODO: traverse cert yaml annotations to populate this config map
+		config := map[string]interface{}{
+			"allowed_domains":    role.AllowedDomains,
+			"allow_bare_domains": role.AllowBareDomains,
+			"allow_any_name":     role.AllowAnyName,
+			"enforce_hostnames":  role.EnforceHostnames,
+			"organization":       role.Organization,
+		}
+		if _, err := v.Logical().Write(backend+"/roles/"+role.Name, config); err != nil {
 			return err
 		}
 	}
@@ -82,39 +95,34 @@ func (c *BackendCommand) writeRoles(v *api.Client, roles []*VaultRole) error {
 	return nil
 }
 
-func (c *BackendCommand) writeCerts(v *api.Client, certs []*VaultCert) error {
+func (c *BackendCommand) writeCerts(v *api.Client, backend string, certs manifest.Certs) error {
 	var path string
-	var certInfo string
 	for _, cert := range certs {
-		if cert.Root {
-			path = cert.Backend + "/root/generate/" + cert.Type
-			certInfo = fmt.Sprintf("%s root SSL certificate", cert.Type)
-		} else {
-			path = cert.Backend + "/issue/" + cert.Role
-			certInfo = fmt.Sprintf("SSL certificate with role %s", cert.Role)
+		switch cert.Action {
+		case "generate":
+			path = fmt.Sprintf("%s/%s/generate/%s", backend, cert.Kind, cert.Type)
+		case "issue":
+			path = fmt.Sprintf("%s/issue/%s", backend, cert.Role)
+		default:
+			return fmt.Errorf("Invalid certificate action: %s", cert.Action)
 		}
 		// issue certificates
-		c.UI.Info(fmt.Sprintf("Attempting to generate %s for backend: %s", certInfo, cert.Backend))
-		c, err := v.Logical().Write(path, cert.Config)
+		c.UI.Info(fmt.Sprintf("Attempting to %s %s certificate", cert.Action, cert.Name))
+		// TODO: traverse cert yaml annotations to populate this config map
+		config := map[string]interface{}{
+			"common_name": cert.CommonName,
+			"ttl":         cert.TTL,
+			"ip_sans":     cert.IPSans,
+			"alt_names":   cert.AltNames,
+		}
+
+		resp, err := v.Logical().Write(path, config)
 		if err != nil {
 			return err
 		}
-
-		if cert.Store {
-			s, err := json.Marshal(c.Data)
-			if err != nil {
-				return err
-			}
-			// unmarshal into interface
-			var params interface{}
-			err = json.Unmarshal(s, &params)
-			if err != nil {
-				return err
-			}
-			path := "secret/" + cert.Backend + "/" + cert.Role
-			if _, err := v.Logical().Write(path, params.(map[string]interface{})); err != nil {
-				return err
-			}
+		c.UI.Info(fmt.Sprintf("%v", resp.Data["certificate"].(string)))
+		if cert.Action == "issue" {
+			c.UI.Info(fmt.Sprintf("%v", resp.Data["private_key"].(string)))
 		}
 	}
 
@@ -122,45 +130,25 @@ func (c *BackendCommand) writeCerts(v *api.Client, certs []*VaultCert) error {
 }
 
 // runBackend creates vault backends
-func (c *BackendCommand) runBackend(backends []*VaultBackend) int {
+func (c *BackendCommand) runBackend(backends manifest.Backends) int {
 	// more than 1 server requested
-	beChan := make(chan error, 1)
 	for _, backend := range backends {
 		v, err := c.Client("", "")
 		if err != nil {
 			c.UI.Error(fmt.Sprintf("Failed to fetch Vault client: %v", err))
 			return 1
 		}
-		go func(b *VaultBackend) {
-			// create PKI roles
-			if err := c.writeRoles(v, b.Roles); err != nil {
-				beChan <- err
-				return
-			}
-			// generate SSL certs
-			if err := c.writeCerts(v, b.Certs); err != nil {
-				beChan <- err
-				return
-			}
-			beChan <- nil
-		}(backend)
+		// create PKI roles
+		if err := c.writeRoles(v, backend.Name, backend.Roles); err != nil {
+			c.UI.Error(fmt.Sprintf("Failed to create role: %s", err))
+		}
+		// generate SSL certs
+		if err := c.writeCerts(v, backend.Name, backend.Certs); err != nil {
+			c.UI.Error(fmt.Sprintf("Failed to create certificate: %s", err))
+		}
 	}
 	// collect the results
-	var errStatus bool
-	for i := 0; i < len(backends); i++ {
-		err := <-beChan
-		if err != nil {
-			c.UI.Error(fmt.Sprintf("Failed to configure backend %s : %v", backends[i].Name, err))
-			errStatus = true
-			continue
-		}
-		c.UI.Info(fmt.Sprintf("Successfully configured backend %s", backends[i].Name))
-	}
-	if errStatus {
-		return 1
-	}
-
-	c.UI.Info(fmt.Sprintf("All requested vault backends successfully configured"))
+	c.UI.Info(fmt.Sprintf("Finished configuring backends"))
 
 	return 0
 }
@@ -173,7 +161,7 @@ func (c *BackendCommand) Synopsis() string {
 // Help returns detailed command help
 func (c *BackendCommand) Help() string {
 	helpText := `
-Usage: cam-vault backend [options]
+Usage: vaultops backend [options]
 
     Manages vault backends
 

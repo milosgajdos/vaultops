@@ -2,10 +2,10 @@ package command
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/vault/api"
+	"github.com/milosgajdos83/vaultops/manifest"
 )
 
 // SetupCommand sets up vault cluster
@@ -19,28 +19,39 @@ type SetupCommand struct {
 // If setup command fails it returns non-zero integer
 func (c *SetupCommand) Run(args []string) int {
 	var config string
-	var keyFile string
-	var store bool
+	var store string
 	// create command flags
 	flags := c.Meta.FlagSet("setup", FlagSetDefault)
 	flags.Usage = func() { c.UI.Info(c.Help()) }
 	flags.StringVar(&config, "config", "", "")
-	flags.StringVar(&keyFile, "key-file", "", "")
-	flags.BoolVar(&store, "store", false, "")
+	flags.StringVar(&store, "store", "local", "")
 	if err := flags.Parse(args); err != nil {
 		return 1
 	}
 
-	return c.runSetup(config, keyFile, store)
+	// create vault keys store handle
+	s, err := VaultKeyStore(store)
+	if err != nil {
+		c.UI.Error(fmt.Sprintf("Failed to create %s store: %v", store, err))
+		return 1
+	}
+
+	return c.runSetup(config, s, nil)
 }
 
 // runsetup setupializes vault server and returns 0 if successful
-func (c *SetupCommand) runSetup(config, keyFile string, store bool) int {
+func (c *SetupCommand) runSetup(config string, store Store, cipher Cipher) int {
 	initCmd := &InitCommand{
 		Meta: c.Meta,
 	}
 	// get hosts against which we want to run unseal command
-	hosts, err := getVaultHosts(config, "init")
+	m, err := manifest.Parse(config)
+	if err != nil {
+		c.UI.Error(fmt.Sprintf("Failed to parse manifest %s: %v", config, err))
+		return 1
+	}
+
+	hosts, err := m.GetHosts("init")
 	if err != nil {
 		c.UI.Error(fmt.Sprintf("Failed to read vault init hosts: %v", err))
 		return 1
@@ -54,7 +65,7 @@ func (c *SetupCommand) runSetup(config, keyFile string, store bool) int {
 	}
 	// runt Vault Init
 	c.UI.Info(fmt.Sprintf("Attempting to initialize vault cluster"))
-	if ret := initCmd.runInit(hosts, req, store); ret != 0 {
+	if ret := initCmd.runInit(hosts, req, store, cipher); ret != 0 {
 		return ret
 	}
 
@@ -62,24 +73,20 @@ func (c *SetupCommand) runSetup(config, keyFile string, store bool) int {
 		Meta: c.Meta,
 	}
 	// get hosts against which we want to run unseal command
-	hosts, err = getVaultHosts(config, "unseal")
+	hosts, err = m.GetHosts("init")
 	if err != nil {
 		c.UI.Error(fmt.Sprintf("Failed to read vault unseal hosts: %v", err))
 		return 1
 	}
-	// if keyFile is not provided try to read the loca keys
-	if keyFile == "" {
-		keyFile = filepath.Join(localDir, localFile)
-	}
-	// get keys
-	keys, err := readVaultKeys(keyFile)
-	if err != nil {
-		c.UI.Error(fmt.Sprintf("Failed to parse  %s key file: %v", keyFile, err))
+	// read vault keys
+	vk := new(VaultKeys)
+	if err := vk.Read(store, cipher); err != nil {
+		c.UI.Error(fmt.Sprintf("Failed to read vault keys: %v", err))
 		return 1
 	}
 	// unsearl vault cluster
 	c.UI.Info(fmt.Sprintf("Attempting to unseal vault cluster"))
-	if ret := unsealCmd.runUnseal(hosts, keys); ret != 0 {
+	if ret := unsealCmd.runUnseal(hosts, vk); ret != 0 {
 		return ret
 	}
 
@@ -87,7 +94,7 @@ func (c *SetupCommand) runSetup(config, keyFile string, store bool) int {
 		Meta: c.Meta,
 	}
 	// get mounts
-	mounts, err := getVaultMounts(config)
+	mounts := m.GetMounts()
 	if err != nil {
 		c.UI.Error(fmt.Sprintf("Failed to read vault mounts: %v", err))
 		return 1
@@ -102,7 +109,7 @@ func (c *SetupCommand) runSetup(config, keyFile string, store bool) int {
 		Meta: c.Meta,
 	}
 	// get backends
-	backends, err := getVaultBackends(config)
+	backends := m.GetBackends()
 	if err != nil {
 		c.UI.Error(fmt.Sprintf("Failed to read vault backends: %v", err))
 		return 1
@@ -117,7 +124,7 @@ func (c *SetupCommand) runSetup(config, keyFile string, store bool) int {
 		Meta: c.Meta,
 	}
 	// get policies
-	policies, err := getVaultPolicies(config)
+	policies := m.GetPolicies()
 	if err != nil {
 		c.UI.Error(fmt.Sprintf("Failed to read vault policies: %v", err))
 		return 1
@@ -139,7 +146,7 @@ func (c *SetupCommand) Synopsis() string {
 // Help returns detailed command help
 func (c *SetupCommand) Help() string {
 	helpText := `
-Usage: cam-vault setup [options]
+Usage: vaultops setup [options]
 
     setup sets up vault cluster as per configuration
 
@@ -152,8 +159,9 @@ General Options:
 ` + GeneralOptionsUsage() + `
 setup Options:
 
-    -config			Path to a config file which contains a list of vault servers and setup actions
-    -store			Store vault keys on the local filesystem
+  -config		Path to a config file which contains a list of vault servers and setup actions
+  -store=local          Type of store where to store the vault keys (default: local)
+  			Local store is ./.local/vault.json
 
 `
 	return strings.TrimSpace(helpText)

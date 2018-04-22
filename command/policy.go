@@ -3,6 +3,8 @@ package command
 import (
 	"fmt"
 	"strings"
+
+	"github.com/milosgajdos83/vaultops/manifest"
 )
 
 // PolicyCommand allows to configure vault policies
@@ -31,10 +33,14 @@ func (c *PolicyCommand) Run(args []string) int {
 		return c.runPolicyList(list)
 	}
 
-	policies, err := getVaultPolicies(config)
-	if err != nil {
-		c.UI.Error(fmt.Sprintf("Failed to read vault policies: %v", err))
-		return 1
+	var policies manifest.Policies
+	if config != "" {
+		m, err := manifest.Parse(config)
+		if err != nil {
+			c.UI.Error(fmt.Sprintf("Failed to parse config %s: %s", config, err))
+			return 1
+		}
+		policies = m.GetPolicies()
 	}
 
 	c.UI.Info(fmt.Sprintf("Attempting to configure vault policies:"))
@@ -82,36 +88,19 @@ func (c *PolicyCommand) runPolicyList(policy string) int {
 }
 
 // runPolicy creates vault policy rules for given vault policies
-func (c *PolicyCommand) runPolicy(policies []*VaultPolicy) int {
+func (c *PolicyCommand) runPolicy(policies manifest.Policies) int {
 	// more than 1 server requested
-	pChan := make(chan error, 1)
 	for _, policy := range policies {
 		v, err := c.Client("", "")
 		if err != nil {
 			c.UI.Error(fmt.Sprintf("Failed to fetch Vault client: %v", err))
 			return 1
 		}
-		go func(p *VaultPolicy) {
-			c.UI.Info(fmt.Sprintf("Attempting to configure policy: %s", p.Name))
-			pChan <- v.Sys().PutPolicy(p.Name, p.Rules)
-		}(policy)
-	}
-	// collect the results
-	var errStatus bool
-	for i := 0; i < len(policies); i++ {
-		err := <-pChan
-		if err != nil {
-			c.UI.Error(fmt.Sprintf("Failed to configure policy %s: %v", policies[i].Name, err))
-			errStatus = true
-			continue
+		if err := v.Sys().PutPolicy(policy.Name, policy.Rules); err != nil {
+			c.UI.Error(fmt.Sprintf("Failed to create policy %s: %s", policy.Name, err))
 		}
-		c.UI.Info(fmt.Sprintf("Successfully configured vault policy: %s", policies[i].Name))
 	}
-	if errStatus {
-		return 1
-	}
-
-	c.UI.Info(fmt.Sprintf("All requested policies successfully created"))
+	c.UI.Info(fmt.Sprintf("Finished creating vault policies"))
 
 	return 0
 }
@@ -124,7 +113,7 @@ func (c *PolicyCommand) Synopsis() string {
 // Help returns detailed command help
 func (c *PolicyCommand) Help() string {
 	helpText := `
-Usage: cam-vault policy [options]
+Usage: vaultops policy [options]
 
     Manages vault policies
 

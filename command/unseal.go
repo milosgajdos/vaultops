@@ -2,10 +2,10 @@ package command
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/hashicorp/vault/api"
+	"github.com/milosgajdos83/vaultops/manifest"
 )
 
 // UnsealCommand implements vault unsealing
@@ -20,11 +20,11 @@ type UnsealCommand struct {
 func (c *UnsealCommand) Run(args []string) int {
 	var status bool
 	var config string
-	var keyFile string
+	var store string
 	// create command flags
 	flags := c.Meta.FlagSet("unseal", FlagSetDefault)
 	flags.Usage = func() { c.UI.Error(c.Help()) }
-	flags.StringVar(&keyFile, "key-file", "", "")
+	flags.StringVar(&store, "store", "local", "")
 	flags.BoolVar(&status, "status", false, "")
 	flags.StringVar(&config, "config", "", "")
 	if err := flags.Parse(args); err != nil {
@@ -41,15 +41,25 @@ func (c *UnsealCommand) Run(args []string) int {
 	if status {
 		return c.runSealStatus(hosts)
 	}
-
-	// if keyFile is not provided try to read the loca keys
-	if keyFile == "" {
-		keyFile = filepath.Join(localDir, localFile)
-	}
-
-	keys, err := readVaultKeys(keyFile)
+	// create vault keys store handle
+	s, err := VaultKeyStore(store)
 	if err != nil {
-		c.UI.Error(fmt.Sprintf("Failed to parse %s key file: %v", keyFile, err))
+		c.UI.Error(fmt.Sprintf("Failed to create %s store: %v", store, err))
+		return 1
+	}
+	// if kms provider not empty, initialize cipher
+	var cipher Cipher
+	if c.flagKMSProvider != "" {
+		cipher, err = VaultKeyCipher(&c.Meta)
+		if err != nil {
+			c.UI.Error(fmt.Sprintf("Failed to create %s cipher: %v", c.flagKMSProvider, err))
+			return 1
+		}
+	}
+	// read vault keys
+	vk := new(VaultKeys)
+	if err := vk.Read(s, cipher); err != nil {
+		c.UI.Error(fmt.Sprintf("Failed to read vault keys: %v", err))
 		return 1
 	}
 
@@ -58,13 +68,18 @@ func (c *UnsealCommand) Run(args []string) int {
 		c.UI.Info(fmt.Sprintf("\t%s", host))
 	}
 
-	return c.runUnseal(hosts, keys)
+	return c.runUnseal(hosts, vk)
 }
 
 // runHosts retrieves a list of hosts agsints which the Init cmd should be run from configuration and returns it
 func (c *UnsealCommand) getRunHosts(config string) ([]string, error) {
 	if config != "" {
-		hosts, err := getVaultHosts(config, "unseal")
+		m, err := manifest.Parse(config)
+		if err != nil {
+			return nil, err
+		}
+
+		hosts, err := m.GetHosts("init")
 		if err != nil {
 			return nil, err
 		}
@@ -216,7 +231,7 @@ func (c *UnsealCommand) Synopsis() string {
 // Help returns detailed command help
 func (c *UnsealCommand) Help() string {
 	helpText := `
-Usage: cam-vault unseal [options]
+Usage: vaultops unseal [options]
 
     Unseal the vault serve by entering master keys.
 
@@ -229,10 +244,15 @@ General Options:
 ` + GeneralOptionsUsage() + `
 unseal Options:
 
-    -key-file			Path to a JSON encoded file which contains vault token and master keys
-    				If left emoty, ./.local/vault.json file is read
+    -store=local		Type of store where to loook up vault keys (default: local)
+    				Local store is ./.local/vault.json
     -status 			Don't unseal the server, only check the seal status
     -config			Path to a config file which contains a list of vault servers
+    -aws-kms-id 		AWS KMS ID. KMS keys with given ID will be used to decrypt vault keys
+    -gcp-kms-crypto-key		GCP KMS crypto key id
+    -gcp-kms-key-ring    	GCP KMS key ring
+    -gcp-kms-region     	GCP KMS region (eg. 'global', 'europe-west1')
+    -gcp-kms-project  		GCP KMS project
 `
 	return strings.TrimSpace(helpText)
 }

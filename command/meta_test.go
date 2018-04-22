@@ -58,7 +58,7 @@ func Test_FlagSet(t *testing.T) {
 		},
 		{
 			FlagSetServer,
-			[]string{"address", "ca-cert", "ca-path", "client-cert", "client-key", "insecure", "tls-skip-verify"},
+			[]string{"address", "ca-cert", "ca-path", "client-cert", "client-key", "insecure", "tls-skip-verify", "kms-provider", "aws-kms-id", "gcp-kms-crypto-key", "gcp-kms-key-ring", "gcp-kms-region", "gcp-kms-project"},
 		},
 	}
 

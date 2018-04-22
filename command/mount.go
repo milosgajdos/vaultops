@@ -6,6 +6,8 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hashicorp/vault/api"
+	"github.com/milosgajdos83/vaultops/manifest"
 	"github.com/ryanuber/columnize"
 )
 
@@ -34,15 +36,20 @@ func (c *MountCommand) Run(args []string) int {
 		return c.runMountList()
 	}
 
-	mounts, err := getVaultMounts(config)
-	if err != nil {
-		c.UI.Error(fmt.Sprintf("Failed to read vault mounts: %v", err))
-		return 1
+	var mounts manifest.Mounts
+	if config != "" {
+		m, err := manifest.Parse(config)
+		if err != nil {
+			c.UI.Error(fmt.Sprintf("Failed to parse config %s: %s", config, err))
+			return 1
+		}
+		// get mounts
+		mounts = m.GetMounts()
 	}
 
 	c.UI.Info(fmt.Sprintf("Attempting to mount vault backends:"))
 	for _, mount := range mounts {
-		c.UI.Info(fmt.Sprintf("\tType: %s Path: %s TTL: %s", mount.MountInput.Type, mount.Path, mount.MountInput.Config.MaxLeaseTTL))
+		c.UI.Info(fmt.Sprintf("\tType: %s Path: %s TTL: %s", mount.Type, mount.Path, mount.MaxLeaseTTL))
 	}
 
 	return c.runMount(mounts)
@@ -109,36 +116,26 @@ func (c *MountCommand) runMountList() int {
 }
 
 // runMount mounts secrets backend mounts
-func (c *MountCommand) runMount(mounts []*VaultMount) int {
+func (c *MountCommand) runMount(mounts manifest.Mounts) int {
 	// more than 1 server requested
-	mountChan := make(chan error, 1)
 	for _, mount := range mounts {
 		client, err := c.Client("", "")
 		if err != nil {
 			c.UI.Error(fmt.Sprintf("Failed to fetch Vault client: %v", err))
 			return 1
 		}
-		go func(m *VaultMount) {
-			c.UI.Info(fmt.Sprintf("Attempting to mount %s backend in path: %s", m.MountInput.Type, m.Path))
-			mountChan <- client.Sys().Mount(m.Path, m.MountInput)
-		}(mount)
-	}
-	// collect the results
-	var errStatus bool
-	for i := 0; i < len(mounts); i++ {
-		err := <-mountChan
-		if err != nil {
-			c.UI.Error(fmt.Sprintf("Failed to mount %s in path %s: %v", mounts[i].MountInput.Type, mounts[i].Path, err))
-			errStatus = true
-			continue
+		c.UI.Info(fmt.Sprintf("Attempting to mount %s backend in path: %s", mount.Type, mount.Path))
+		apiMount := &api.MountInput{
+			Type: mount.Type,
+			Config: api.MountConfigInput{
+				MaxLeaseTTL: mount.MaxLeaseTTL,
+			},
 		}
-		c.UI.Info(fmt.Sprintf("Successfully mounted %s in path %s", mounts[i].Path, mounts[i].MountInput.Type))
+		if err := client.Sys().Mount(mount.Path, apiMount); err != nil {
+			c.UI.Error(fmt.Sprintf("Failed to mount %s backend in path: %s", mount.Type, mount.Path))
+		}
 	}
-	if errStatus {
-		return 1
-	}
-
-	c.UI.Info(fmt.Sprintf("All requested vault backends successfully mounted"))
+	c.UI.Info(fmt.Sprintf("Finished mounting vault backends"))
 
 	return 0
 }
@@ -151,7 +148,7 @@ func (c *MountCommand) Synopsis() string {
 // Help returns detailed command help
 func (c *MountCommand) Help() string {
 	helpText := `
-Usage: cam-vault mount [options]
+Usage: vaultops mount [options]
 
     Mount a new vault secret backend
 

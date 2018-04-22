@@ -13,21 +13,26 @@
 `vault` setup typically requires a lot of manual tasks:
 - initializing vault server
 - unsealing vault server(s) in vault cluster
-- mounting different kinds of vault backends
+- mounting vault backends
 - creating vault backend roles
 - generating SSL certificates
 - configuring vault policies
 
-All of these tasks are usually performed using the well known `vault` cli tool which requires writing a lot of `shell` scripts which often grow into unmanageable full fledged monsters which have no type checking or proper error handling.
+The above listed tasks are usually performed using the `vault` cli tool. This requires writing a lot of `shell` scripts which often grow into unmanageable full fledged monsters which have no type checking or proper error handling.
 
-`vaultops` utility addresses this problem by providing a simple manifest file which can be used to specify all the tasks required to perform `vault` setup once the `vault` is running. `vaultops` reads the manifest file and performs all the actions requsted by user. `vaultops` interacts with `vault` via REST API and performs the requested tasks concurrently whenever possible. The user can choose to perform a full setup or only selected setup actions.`vaultops` provides several commands.
+`vaultops` utility addresses this problem by providing a simple manifest file which can be used to specify all the tasks required to perform `vault` setup once the `vault` cluster is running. `vaultops` reads the manifest file and performs all the actions requsted by user. `vaultops` interacts with `vault` via REST API and performs the tasks concurrently whenever possible. The user can choose to perform a full setup or only selected setup actions.
 
 # Quick start
 
-Fetch the project:
+Get the project:
 
 ```
-$ go get github.com/milosgajdos83/vaultops
+$ go get -u github.com/milosgajdos83/vaultops
+```
+
+Get dependencies:
+```
+$ cd $GOPATH/github.com/milosgajdos83/vaultops && make dep
 ```
 
 Run the tests
@@ -67,62 +72,11 @@ Available commands are:
     unseal     Unseal a Vault server
 ```
 
-`vaultop` reads the environment variables just like `vault` utility so you can rely on the familiar `$VAULT_` environment variables when specifying `vault` server URL and authentication token.
+`vaultop` reads the same environment variables like `vault` cli tool, so you can rely on the familiar `$VAULT_` environment variables when specifying the `vault` server URLs and authentication tokens.
 
 # Manifest
 
-`vaultops` allows you to define a manifest file which can be supplied to its commands. The manifest is a simple `YAML` file which specifies a list of `vault` hosts and `vault` resources that are requested to be created in `vault`. A sample manifest file can be seen below:
-
-```yaml
-# vault hosts
-hosts:
-  unseal:
-    - "http://10.100.21.161:8200"
-    - "http://10.100.21.162:8200"
-    - "http://10.100.21.163:8200"
-# vault mounts
-mounts:
-  - path: "k8s-ca"
-    type: "pki"
-    max-lease-ttl: "876000h"
-# vault backends
-backends:
-  - name: "k8s-ca"
-    # vault roles to create
-    roles:
-      - name: "api-server"
-        allowed-domains: "api-server,kubernetes,kubernetes.default"
-        allow-bare-domains: true
-        allow-any-name: true
-        organization: "system:control-plane"
-    # certificates to generate
-    certificates:
-      - name: "root-ca"
-        root: true
-        common-name: "k8s-ca"
-        ttl: "876000h"
-        type: "internal"
-      - name: "k8s-ca"
-        common-name: "api-server"
-        ttl: "875000h"
-        ip-sans: "10.101.0.1,127.0.0.1"
-        alt-names: "kubernetes.default.svc.cluster.local"
-        role: "api-server"
-        store: true
-# vault policies
-policies:
-  - name: "k8s-ca"
-    rules: |
-      path "secret/k8s-ca/*" {
-         policy = "write"
-      }
-      path "k8s-ca/roles/*" {
-         policy = "write"
-      }
-      path "k8s-ca/issue/*" {
-        policy = "write"
-      }
-```
+`vaultops` allows you to define a manifest file which can be supplied to its commands. The manifest is a simple `YAML` file which specifies a list of `vault` hosts and `vault` resources that are requested to be created in `vault`. A sample manifest file can be seen in [example](manifest/examples/example.yaml).
 
 Let's look at a simple example:
 
@@ -184,7 +138,7 @@ $ VAULT_ADDR="http://10.100.21.161:8200" ./vaultops setup -config manifest.yaml
 
 ### Security
 
-`init` command allows to store `vault` keys on local filesystem in `.local` directory of your current working directory for convenience using `-store` cli switch in a predefied `json` file which looks as follows:
+By default `init` command stores **unencrypted** `vault` keys on local filesystem in `.local` directory of your **current working directory** in a predefied `json` format which looks as follows:
 
 ```json
 {
@@ -199,13 +153,15 @@ $ VAULT_ADDR="http://10.100.21.161:8200" ./vaultops setup -config manifest.yaml
 }
 ```
 
-**This is not what you should do when unsealing your vault clusters unless you are unsealing a cluster for development pruposes! Remember, no sensitive data should ever touch the filesystem!**.
+**This is not what you should do when unsealing your vault clusters unless you are unsealing a cluster for development pruposes! Remember, no sensitive data should ever touch the filesystem! This option is available here for local development when using KMS or whatnot to decrypt the keys is too much hassle!**
 
-In real life you should store the `vault` keys in a secure location. The reason why `vaultops` provides an option to store the keys on local filesystem is because the `unseal` command attempts to read the keys from local filesystem if no other key file is specified via `-key-file` switch. `vaultops` attempts to unseal every `vault` server specified in the manifest file.
+In non-local environment you can encrypt the stored vault keys using keys provided by publc cloud providers such as [AWS KMS](https://aws.amazon.com/kms/) or [CGP cloudkms](https://cloud.google.com/kms/). These are available via `-kms-provider` cli option. Please consult the command line options. At the moment only AWS KMS and GCP KMS are supported.
+
+`vaultop` code can be extended to use your own KMS: PRs welcome :-) Equally, as long as the key storage is concerned, the code currently only supports local storage, however extending it for different storage options should be very easy.
 
 ## vaultops commands
 
-Most of the `vaultops` commands do not require using complete manifest. To run some of the commands you only need some parts of manifest. For example, say you only want to mount some backends. Given the `vault` is initialized and unsealed, you can specify the following `vaultops` manifest and run the `mount` command as shown below:
+Most of the `vaultops` commands do not require using complete manifest. To run some of the commands you only need some parts of the complete manifest. For example, say you only want to mount some backends. Given the `vault` is initialized and unsealed, you can specify the following `vaultops` manifest and run the `mount` command as shown below:
 
 `mounts.yaml` example:
 
@@ -233,4 +189,5 @@ Similarly, you can run `policy` command with only the policies part of the full 
 
 **WE NEED WAY BIGGER TEST COVERAGE**
 
-There is lots of redundant code so tonnes of refactoring up for grabs!
+There is lots of redundant code so tonnes of refactoring up for grabs! 🤗
+Only local key store is implemented at the moment, remote stores are up gor grabs! 🤗
