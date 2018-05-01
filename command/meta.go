@@ -3,6 +3,7 @@ package command
 import (
 	"flag"
 	"fmt"
+	"path/filepath"
 
 	"github.com/hashicorp/vault/api"
 	"github.com/mitchellh/cli"
@@ -55,12 +56,17 @@ type Meta struct {
 	flagClientCert      string
 	flagClientKey       string
 	flagInsecure        bool
+	flagRedact          bool
+	flagKeyStore        string
 	flagKMSProvider     string
 	flagAwsKmsID        string
 	flagGcpKmsCryptoKey string
 	flagGcpKmsKeyRing   string
 	flagGcpKmsRegion    string
 	flagGcpKmsProject   string
+	flagStorageBucket   string
+	flagStorageKey      string
+	flagKeyLocalPath    string
 }
 
 // FlagSet returns a FlagSet with the common flags that every
@@ -68,6 +74,7 @@ type Meta struct {
 func (m *Meta) FlagSet(name string, fs FlagSetFlags) *flag.FlagSet {
 	f := flag.NewFlagSet(name, flag.ContinueOnError)
 
+	storageLocalPath := filepath.Join(localDir, localFile)
 	// FlagSetServer tells us to enable the settings for selecting
 	// the server information.
 	if fs&FlagSetServer != 0 {
@@ -76,14 +83,18 @@ func (m *Meta) FlagSet(name string, fs FlagSetFlags) *flag.FlagSet {
 		f.StringVar(&m.flagCAPath, "ca-path", "", "")
 		f.StringVar(&m.flagClientCert, "client-cert", "", "")
 		f.StringVar(&m.flagClientKey, "client-key", "", "")
-		f.BoolVar(&m.flagInsecure, "insecure", false, "")
 		f.BoolVar(&m.flagInsecure, "tls-skip-verify", false, "")
+		f.BoolVar(&m.flagRedact, "redact", true, "")
+		f.StringVar(&m.flagKeyStore, "key-store", "local", "")
 		f.StringVar(&m.flagKMSProvider, "kms-provider", "", "")
 		f.StringVar(&m.flagAwsKmsID, "aws-kms-id", "", "")
 		f.StringVar(&m.flagGcpKmsCryptoKey, "gcp-kms-crypto-key", "", "")
 		f.StringVar(&m.flagGcpKmsKeyRing, "gcp-kms-key-ring", "", "")
 		f.StringVar(&m.flagGcpKmsRegion, "gcp-kms-region", "", "")
 		f.StringVar(&m.flagGcpKmsProject, "gcp-kms-project", "", "")
+		f.StringVar(&m.flagStorageBucket, "storage-bucket", "", "")
+		f.StringVar(&m.flagStorageKey, "storage-key", "", "")
+		f.StringVar(&m.flagKeyLocalPath, "key-local-path", storageLocalPath, "")
 	}
 
 	return f
@@ -190,12 +201,18 @@ func GeneralOptionsUsage() string {
                           not recommended. Verification will also be skipped
                           if VAULT_SKIP_VERIFY is set.
 
-  -kms-provider 	  KMS provider
+  -redact=true 		  Redacts sensitive information when printing into stdout
+  -kms-provider 	  KMS provider (aws, gcp)
   -aws-kms-id		  AWS KMS ID. KMS keys with given ID will be used to encrypt vault keys
   -gcp-kms-crypto-key	  GCP KMS crypto key id
   -gcp-kms-key-ring       GCP KMS key ring
   -gcp-kms-region     	  GCP region (eg. 'global', 'europe-west1')
-  -gcp-kms-project  	  GCP project
+  -gcp-kms-project  	  GCP project name
+  -storage-bucket         Cloud storage bucket
+  -storage-key            Cloud storage key
+  -key-store=local	  Type of store where to loook up vault keys (default: local)
+    			  Local store is ./.local/vault.json
+  -key-local-path         Path to locally stored keys
 `
 
 	return general

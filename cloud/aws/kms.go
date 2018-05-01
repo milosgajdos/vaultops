@@ -1,4 +1,4 @@
-package kms
+package aws
 
 import (
 	"fmt"
@@ -8,35 +8,38 @@ import (
 	"github.com/aws/aws-sdk-go/service/kms"
 )
 
-// AwsKMS is AWS KMS client
-type AwsKMS struct {
-	client *kms.KMS
-	keyID  string
+// KMS is AWS KMS client
+type KMS struct {
+	client interface {
+		Encrypt(input *kms.EncryptInput) (*kms.EncryptOutput, error)
+		Decrypt(input *kms.DecryptInput) (*kms.DecryptOutput, error)
+	}
+	keyID string
 }
 
-// NewWithSession creates new AWS KMS client with session sess
+// NewKMSWithSession creates new AWS KMS client with session sess
 // It returns error if the keyID is invalid AWS KMS key id
-func NewWithSession(sess *session.Session, keyID string) (*AwsKMS, error) {
+func NewKMSWithSession(sess *session.Session, keyID string) (*KMS, error) {
 	if keyID == "" {
 		return nil, fmt.Errorf("Invalid AWS KMS key ID: %v", keyID)
 	}
 
-	return &AwsKMS{kms.New(sess), keyID}, nil
+	return &KMS{kms.New(sess), keyID}, nil
 }
 
-// NewAWS returns new AWS KMS client
+// NewKMS returns new AWS KMS client
 // It returns error if the keyID is invalid AWS KMS key id
-func NewAWS(keyID string) (*AwsKMS, error) {
+func NewKMS(keyID string) (*KMS, error) {
 	sess, err := session.NewSession()
 	if err != nil {
 		return nil, err
 	}
 
-	return NewWithSession(sess, keyID)
+	return NewKMSWithSession(sess, keyID)
 }
 
 // Encrypt encrypts plainText data and returns it
-func (k *AwsKMS) Encrypt(plainText []byte) ([]byte, error) {
+func (k *KMS) Encrypt(plainText []byte) ([]byte, error) {
 	out, err := k.client.Encrypt(&kms.EncryptInput{
 		KeyId:     aws.String(k.keyID),
 		Plaintext: plainText,
@@ -50,7 +53,7 @@ func (k *AwsKMS) Encrypt(plainText []byte) ([]byte, error) {
 }
 
 // Decrypt decrypts cipherText data and returns it
-func (k *AwsKMS) Decrypt(cipherText []byte) ([]byte, error) {
+func (k *KMS) Decrypt(cipherText []byte) ([]byte, error) {
 	out, err := k.client.Decrypt(&kms.DecryptInput{
 		CiphertextBlob: cipherText,
 		EncryptionContext: map[string]*string{

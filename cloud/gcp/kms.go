@@ -1,4 +1,4 @@
-package kms
+package gcp
 
 import (
 	"encoding/base64"
@@ -14,15 +14,15 @@ const (
 	keyPath = "projects/%s/locations/%s/keyRings/%s/cryptoKeys/%s"
 )
 
-// GcpKMS is GCP KMS client
-type GcpKMS struct {
+// KMS is GCP KMS client
+type KMS struct {
 	client  *gcp.Service
 	keyPath string
 }
 
-// NewGCP returns new GCP KMS client
+// NewKMS returns new GCP Cloud KMS client
 // It returns error if either Google OAuth client or CloudKMS client failed to be created
-func NewGCP(project, location, keyring, cryptoKey string) (*GcpKMS, error) {
+func NewKMS(project, location, keyring, cryptoKey string) (*KMS, error) {
 	ctx := context.Background()
 	oauth, err := google.DefaultClient(ctx, gcp.CloudPlatformScope)
 	if err != nil {
@@ -34,14 +34,14 @@ func NewGCP(project, location, keyring, cryptoKey string) (*GcpKMS, error) {
 		return nil, fmt.Errorf("Failed to create GCP CloudKMS client: %s", err.Error())
 	}
 
-	return &GcpKMS{
+	return &KMS{
 		client:  client,
 		keyPath: fmt.Sprintf(keyPath, project, location, keyring, cryptoKey),
 	}, nil
 }
 
 // Encrypt encrypts plainText data and returns it
-func (k *GcpKMS) Encrypt(plainText []byte) ([]byte, error) {
+func (k *KMS) Encrypt(plainText []byte) ([]byte, error) {
 	resp, err := k.client.Projects.Locations.KeyRings.CryptoKeys.Encrypt(k.keyPath, &gcp.EncryptRequest{
 		Plaintext: base64.StdEncoding.EncodeToString(plainText),
 	}).Do()
@@ -54,7 +54,7 @@ func (k *GcpKMS) Encrypt(plainText []byte) ([]byte, error) {
 }
 
 // Decrypt decrypts cipherText data and returns it
-func (k *GcpKMS) Decrypt(cipherText []byte) ([]byte, error) {
+func (k *KMS) Decrypt(cipherText []byte) ([]byte, error) {
 	resp, err := k.client.Projects.Locations.KeyRings.CryptoKeys.Decrypt(k.keyPath, &gcp.DecryptRequest{
 		Ciphertext: base64.StdEncoding.EncodeToString(cipherText),
 	}).Do()

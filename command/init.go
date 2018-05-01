@@ -6,7 +6,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/vault/api"
+	"github.com/milosgajdos83/vaultops/cipher"
 	"github.com/milosgajdos83/vaultops/manifest"
+	"github.com/milosgajdos83/vaultops/store"
 )
 
 // InitCommand implements vault initialization
@@ -22,7 +24,6 @@ func (c *InitCommand) Run(args []string) int {
 	var status bool
 	var threshold, shares int
 	var config string
-	var store string
 	// create command flags
 	flags := c.Meta.FlagSet("init", FlagSetDefault)
 	flags.Usage = func() { c.UI.Info(c.Help()) }
@@ -30,7 +31,6 @@ func (c *InitCommand) Run(args []string) int {
 	flags.IntVar(&shares, "key-shares", 5, "")
 	flags.IntVar(&threshold, "key-threshold", 3, "")
 	flags.StringVar(&config, "config", "", "")
-	flags.StringVar(&store, "store", "local", "")
 	if err := flags.Parse(args); err != nil {
 		return 1
 	}
@@ -55,15 +55,15 @@ func (c *InitCommand) Run(args []string) int {
 		RecoveryThreshold: threshold,
 	}
 	// create vault key store handle
-	s, err := VaultKeyStore(store)
+	s, err := VaultKeyStore(c.flagKeyStore, &c.Meta)
 	if err != nil {
-		c.UI.Error(fmt.Sprintf("Failed to create %s store: %v", store, err))
+		c.UI.Error(fmt.Sprintf("Failed to initialize %s store: %v", c.flagKeyStore, err))
 		return 1
 	}
 	// if kms provider not empty, initialize cipher
-	var cipher Cipher
+	var cphr cipher.Cipher
 	if c.flagKMSProvider != "" {
-		cipher, err = VaultKeyCipher(&c.Meta)
+		cphr, err = VaultKeyCipher(&c.Meta)
 		if err != nil {
 			c.UI.Error(fmt.Sprintf("Failed to create %s cipher: %v", c.flagKMSProvider, err))
 			return 1
@@ -75,7 +75,7 @@ func (c *InitCommand) Run(args []string) int {
 		c.UI.Info(fmt.Sprintf("\t%s", host))
 	}
 
-	return c.runInit(hosts, req, s, cipher)
+	return c.runInit(hosts, req, s, cphr, c.flagRedact)
 }
 
 // runHosts retrieves a list of hosts agsints which the Init cmd should be run from configuration and returns it
@@ -144,7 +144,7 @@ func (c *InitCommand) runInitStatus(hosts []string) int {
 }
 
 // runInit initializes vault server and returns 0 if successful
-func (c *InitCommand) runInit(hosts []string, req *api.InitRequest, store Store, cipher Cipher) int {
+func (c *InitCommand) runInit(hosts []string, req *api.InitRequest, s store.Store, cphr cipher.Cipher, redact bool) int {
 	// init response
 	type res struct {
 		host string
@@ -180,22 +180,33 @@ func (c *InitCommand) runInit(hosts []string, req *api.InitRequest, store Store,
 		}
 		c.UI.Info(fmt.Sprintf("Host: %s initialized. Master keys:", initRes.host))
 		for i, key := range initRes.resp.Keys {
+			if redact {
+				key = Redact(rune('X'), len(key))
+			}
 			c.UI.Info(fmt.Sprintf("Key %d: %s", i+1, key))
 		}
-		c.UI.Info(fmt.Sprintf("Initial Root Token: %s", initRes.resp.RootToken))
+
+		rootToken := initRes.resp.RootToken
+		if redact {
+			rootToken = Redact(rune('X'), len(rootToken))
+		}
+		c.UI.Info(fmt.Sprintf("Initial Root Token: %s", rootToken))
 
 		// write the retrieved vault keys into .local/vault.json
 		vk := &VaultKeys{RootToken: initRes.resp.RootToken, MasterKeys: initRes.resp.Keys}
-		if _, err := vk.Write(store, cipher); err != nil {
+		c.UI.Info(fmt.Sprintf("Attempting to store the vault keys in store: %s", c.Meta.flagKeyStore))
+		if _, err := vk.Write(s, cphr); err != nil {
 			c.UI.Error(fmt.Sprintf("Failed to store vault keys: %v", err))
 			return 1
 		}
+		c.UI.Info(fmt.Sprintf("Storing Vault keys successul"))
 	}
 
 	if errStatus {
 		return 1
 	}
 
+	c.UI.Info(fmt.Sprintf("Vault successfully initialized"))
 	return 0
 }
 
@@ -224,7 +235,6 @@ init Options:
   -status 			Don't initialize the server, only check the init status
   -key-shares=5 		Number of key shares to split the master key into
   -key-threshold=3		Number of key shares required to reconstruct the master key
-  -store=local			Type of store where to store the vault keys (default: local)
   -config			Path to a config file which contains a list of vault servers
 
 `

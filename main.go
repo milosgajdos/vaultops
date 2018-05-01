@@ -38,9 +38,9 @@ func Commands() map[string]cli.CommandFactory {
 			ErrorColor: cli.UiColorRed,
 			WarnColor:  cli.UiColorYellow,
 			Ui: &cli.PrefixedUi{
-				InfoPrefix:  "[ info ] ",
-				ErrorPrefix: "[ error ] ",
-				WarnPrefix:  "[ warn ] ",
+				InfoPrefix:  "[INFO] ",
+				WarnPrefix:  "[WARN] ",
+				ErrorPrefix: "[ERROR] ",
 				Ui: &cli.BasicUi{
 					Writer:      os.Stdout,
 					ErrorWriter: os.Stderr,
@@ -57,26 +57,6 @@ func Commands() map[string]cli.CommandFactory {
 		},
 		"unseal": func() (cli.Command, error) {
 			return &command.UnsealCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"mount": func() (cli.Command, error) {
-			return &command.MountCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"backend": func() (cli.Command, error) {
-			return &command.BackendCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"policy": func() (cli.Command, error) {
-			return &command.PolicyCommand{
-				Meta: *meta,
-			}, nil
-		},
-		"setup": func() (cli.Command, error) {
-			return &command.SetupCommand{
 				Meta: *meta,
 			}, nil
 		},

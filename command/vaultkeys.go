@@ -3,6 +3,9 @@ package command
 import (
 	"encoding/json"
 	"io/ioutil"
+
+	"github.com/milosgajdos83/vaultops/cipher"
+	"github.com/milosgajdos83/vaultops/store"
 )
 
 // VaultKeys stores vault root token and master keys
@@ -14,7 +17,7 @@ type VaultKeys struct {
 }
 
 // Write writes vault keys in store and encrypts them with cipher c
-func (vk *VaultKeys) Write(s Store, c Cipher) (int, error) {
+func (vk *VaultKeys) Write(s store.Store, c cipher.Cipher) (int, error) {
 	v := &VaultKeys{vk.RootToken, vk.MasterKeys}
 	// encode vault keys into json
 	data, err := json.Marshal(v)
@@ -36,7 +39,7 @@ func (vk *VaultKeys) Write(s Store, c Cipher) (int, error) {
 
 // Read reads vault keys from store and returns them decrypted
 // It modifies the keys of the receiver
-func (vk *VaultKeys) Read(s Store, c Cipher) error {
+func (vk *VaultKeys) Read(s store.Store, c cipher.Cipher) error {
 	data, err := ioutil.ReadAll(s)
 	if err != nil {
 		return err

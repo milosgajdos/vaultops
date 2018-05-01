@@ -41,8 +41,12 @@
     "private/protocol/query",
     "private/protocol/query/queryutil",
     "private/protocol/rest",
+    "private/protocol/restxml",
     "private/protocol/xml/xmlutil",
     "service/kms",
+    "service/s3",
+    "service/s3/s3iface",
+    "service/s3/s3manager",
     "service/sts"
   ]
   revision = "3e7014382cdc91695381614d0110a3cff997ba72"
@@ -182,12 +186,6 @@
   revision = "f4461a52b6329c11190f11fe3384ec8aa964e21c"
 
 [[projects]]
-  name = "github.com/ryanuber/columnize"
-  packages = ["."]
-  revision = "983d3a5fab1bf04d1b412465d2d9f8430e2e917e"
-  version = "v2.1.0"
-
-[[projects]]
   branch = "master"
   name = "github.com/sethgrid/pester"
   packages = ["."]
@@ -283,6 +281,6 @@
 [solve-meta]
   analyzer-name = "dep"
   analyzer-version = 1
-  inputs-digest = "adce9185b822176ae6c187e24885c1a923e40f425dde325848b80e240cd86584"
+  inputs-digest = "1756fadfe72b5e9f25e29e0d1b4e8996bcd1594cd8614ff5f9693773be72683d"
   solver-name = "gps-cdcl"
   solver-version = 1

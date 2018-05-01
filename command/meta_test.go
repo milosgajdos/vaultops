@@ -47,7 +47,7 @@ func TestMain(m *testing.M) {
 }
 
 // ripped off https://github.com/hashicorp/vault/blob/master/meta/meta_test.go
-func Test_FlagSet(t *testing.T) {
+func TestFlagSet(t *testing.T) {
 	cases := []struct {
 		Flags    FlagSetFlags
 		Expected []string
@@ -58,7 +58,7 @@ func Test_FlagSet(t *testing.T) {
 		},
 		{
 			FlagSetServer,
-			[]string{"address", "ca-cert", "ca-path", "client-cert", "client-key", "insecure", "tls-skip-verify", "kms-provider", "aws-kms-id", "gcp-kms-crypto-key", "gcp-kms-key-ring", "gcp-kms-region", "gcp-kms-project"},
+			[]string{"address", "ca-cert", "ca-path", "client-cert", "client-key", "tls-skip-verify", "redact", "key-store", "kms-provider", "aws-kms-id", "gcp-kms-crypto-key", "gcp-kms-key-ring", "gcp-kms-region", "gcp-kms-project", "storage-bucket", "storage-key", "key-local-path"},
 		},
 	}
 
@@ -76,7 +76,7 @@ func Test_FlagSet(t *testing.T) {
 	}
 }
 
-func Test_Config(t *testing.T) {
+func TestConfig(t *testing.T) {
 	// empty address
 	config, err := metaTest.Config("")
 	assert.NotNil(t, config)
@@ -108,7 +108,7 @@ func Test_Config(t *testing.T) {
 	assert.Error(t, err)
 }
 
-func Test_Client(t *testing.T) {
+func TestClient(t *testing.T) {
 	client, err := metaTest.Client("", "")
 	assert.NotNil(t, client)
 	assert.NoError(t, err)
