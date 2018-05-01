@@ -5,6 +5,7 @@ import (
 	"strings"
 
 	"github.com/hashicorp/vault/api"
+	"github.com/milosgajdos83/vaultops/cipher"
 	"github.com/milosgajdos83/vaultops/manifest"
 )
 
@@ -20,11 +21,9 @@ type UnsealCommand struct {
 func (c *UnsealCommand) Run(args []string) int {
 	var status bool
 	var config string
-	var store string
 	// create command flags
 	flags := c.Meta.FlagSet("unseal", FlagSetDefault)
 	flags.Usage = func() { c.UI.Error(c.Help()) }
-	flags.StringVar(&store, "store", "local", "")
 	flags.BoolVar(&status, "status", false, "")
 	flags.StringVar(&config, "config", "", "")
 	if err := flags.Parse(args); err != nil {
@@ -42,15 +41,15 @@ func (c *UnsealCommand) Run(args []string) int {
 		return c.runSealStatus(hosts)
 	}
 	// create vault keys store handle
-	s, err := VaultKeyStore(store)
+	s, err := VaultKeyStore(c.flagKeyStore, &c.Meta)
 	if err != nil {
-		c.UI.Error(fmt.Sprintf("Failed to create %s store: %v", store, err))
+		c.UI.Error(fmt.Sprintf("Failed to create %s store: %v", c.flagKeyStore, err))
 		return 1
 	}
 	// if kms provider not empty, initialize cipher
-	var cipher Cipher
+	var cphr cipher.Cipher
 	if c.flagKMSProvider != "" {
-		cipher, err = VaultKeyCipher(&c.Meta)
+		cphr, err = VaultKeyCipher(&c.Meta)
 		if err != nil {
 			c.UI.Error(fmt.Sprintf("Failed to create %s cipher: %v", c.flagKMSProvider, err))
 			return 1
@@ -58,7 +57,7 @@ func (c *UnsealCommand) Run(args []string) int {
 	}
 	// read vault keys
 	vk := new(VaultKeys)
-	if err := vk.Read(s, cipher); err != nil {
+	if err := vk.Read(s, cphr); err != nil {
 		c.UI.Error(fmt.Sprintf("Failed to read vault keys: %v", err))
 		return 1
 	}
@@ -244,15 +243,8 @@ General Options:
 ` + GeneralOptionsUsage() + `
 unseal Options:
 
-    -store=local		Type of store where to loook up vault keys (default: local)
-    				Local store is ./.local/vault.json
     -status 			Don't unseal the server, only check the seal status
     -config			Path to a config file which contains a list of vault servers
-    -aws-kms-id 		AWS KMS ID. KMS keys with given ID will be used to decrypt vault keys
-    -gcp-kms-crypto-key		GCP KMS crypto key id
-    -gcp-kms-key-ring    	GCP KMS key ring
-    -gcp-kms-region     	GCP KMS region (eg. 'global', 'europe-west1')
-    -gcp-kms-project  		GCP KMS project
 `
 	return strings.TrimSpace(helpText)
 }

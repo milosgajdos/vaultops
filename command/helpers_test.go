@@ -1,7 +1,13 @@
 package command
 
 import (
+	"fmt"
 	"io/ioutil"
+	"os"
+	"path/filepath"
+	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 // makeTestFile creates a temporary test file and writes data into it
@@ -20,81 +26,62 @@ func makeTestFile(data []byte) (string, error) {
 	return f.Name(), nil
 }
 
-//func Test_getVaultBackends(t *testing.T) {
-//	vaultRoles := []struct {
-//		BEName           string
-//		Name             string
-//		AllowedDomains   string
-//		AllowBareDomains bool
-//		AllowAnyName     bool
-//		EnforceHostnames bool
-//		Organization     string
-//	}{
-//		{"k8s-1", "api", "kubernetes", true, true, false, "org1"},
-//	}
-//
-//	vaultCerts := []struct {
-//		Name       string
-//		Type       string
-//		Root       bool
-//		Role       string
-//		Store      bool
-//		CommonName string
-//		TTL        string
-//		IPSans     string
-//	}{
-//		{"k8s-1", "internal", true, "", false, "comm-name", "100h", ""},
-//		{"k8s-2", "", false, "foorole", false, "foo-name", "87h", "10.1.1.1"},
-//	}
-//	vaultBackends := []string{"k8s-1", "k8s-2"}
-//
-//	// test data
-//	data := `backends:
-//  - name: "` + vaultBackends[0] + `"
-//    roles:
-//      - name: "` + vaultRoles[0].Name + `"
-//        allowed_domains: "` + vaultRoles[0].AllowedDomains + `"
-//        allow_bare_domains: ` + fmt.Sprintf("%t", vaultRoles[0].AllowBareDomains) + `
-//        allow_any_name: ` + fmt.Sprintf("%t", vaultRoles[0].AllowAnyName) + `
-//        enforce_hostnames: ` + fmt.Sprintf("%t", vaultRoles[0].EnforceHostnames) + `
-//        organization: "` + vaultRoles[0].Organization + `"
-//    certificates:
-//      - name: "` + vaultCerts[0].Name + `"
-//        root: ` + fmt.Sprintf("%t", vaultCerts[0].Root) + `
-//        common_name: "` + vaultCerts[0].CommonName + `"
-//        ttl: "` + vaultCerts[0].TTL + `"
-//        type: "` + vaultCerts[0].Type + `"
-//  - name: "` + vaultBackends[1] + `"
-//    certificates:
-//      - name: "` + vaultCerts[1].Name + `"
-//        common_name: "` + vaultCerts[1].CommonName + `"
-//        ttl: "` + vaultCerts[1].TTL + `"
-//        ip_sans: "` + vaultCerts[1].IPSans + `"
-//        role: "` + vaultCerts[1].Role + `"
-//        store: ` + fmt.Sprintf("%t", vaultCerts[1].Store) + `
-//`
-//	f, err := makeTestFile([]byte(data))
-//	defer os.Remove(f)
-//	assert.NoError(t, err)
-//	backends, err := getVaultBackends(f)
-//	assert.NoError(t, err)
-//	assert.NotNil(t, backends)
-//
-//	for i := 0; i < len(backends); i++ {
-//		assert.Equal(t, vaultBackends[i], backends[i].Name)
-//		assert.Equal(t, vaultBackends[i], backends[i].Certs[0].Backend)
-//	}
-//
-//	// random file path causes error
-//	backends, err = getVaultBackends("foobar/dfd")
-//	assert.Error(t, err)
-//	// no parsed backends returns error
-//	data = `foo:
-//  - bar: foobar
-//`
-//	f2, err := makeTestFile([]byte(data))
-//	defer os.Remove(f2)
-//	assert.NoError(t, err)
-//	backends, err = getVaultBackends(f2)
-//	assert.Error(t, err)
-//}
+func makeTestMeta() *Meta {
+	return &Meta{
+		flagKMSProvider:     "aws",
+		flagAwsKmsID:        "id",
+		flagGcpKmsCryptoKey: "key",
+		flagGcpKmsKeyRing:   "ring",
+		flagGcpKmsRegion:    "region",
+		flagGcpKmsProject:   "project",
+		flagStorageBucket:   "bucket",
+		flagStorageKey:      "somekey",
+		flagKeyLocalPath:    filepath.Join(localDir, localFile),
+	}
+}
+
+func TestVaultKeyStore(t *testing.T) {
+	m := makeTestMeta()
+
+	testCases := []struct {
+		storeType string
+		meta      *Meta
+		result    error
+	}{
+		{"local", m, nil},
+		{"s3", m, nil},
+		{"foobar", m, fmt.Errorf("Unsupported store: foobar")},
+	}
+	defer os.Remove(filepath.Join(localDir, localFile))
+
+	for _, tc := range testCases {
+		s, err := VaultKeyStore(tc.storeType, m)
+		if tc.result == nil {
+			assert.NotNil(t, s)
+		} else {
+			assert.Nil(t, s)
+			assert.EqualError(t, err, tc.result.Error())
+		}
+	}
+}
+
+func TestVaultKeyCipher(t *testing.T) {
+	m := makeTestMeta()
+
+	m.flagKMSProvider = "aws"
+	k, err := VaultKeyCipher(m)
+	assert.NoError(t, err)
+	assert.NotNil(t, k)
+
+	m.flagKMSProvider = "foobar"
+	k, err = VaultKeyCipher(m)
+	assert.Error(t, err)
+	assert.Nil(t, k)
+}
+
+func TestRedact(t *testing.T) {
+	ch := rune('X')
+	length := 5
+	str := Redact(ch, length)
+	assert.Equal(t, len(str), length)
+}

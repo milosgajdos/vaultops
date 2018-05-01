@@ -1,4 +1,4 @@
-package command
+package cipher
 
 // Cipher allows to encrypt and decrypt arbitrary data
 type Cipher interface {

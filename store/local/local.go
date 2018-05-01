@@ -1,4 +1,4 @@
-package store
+package local
 
 import (
 	"os"
@@ -10,10 +10,11 @@ type Local struct {
 	f *os.File
 }
 
-// NewLocal creates local store
-func NewLocal(path string) (*Local, error) {
+// NewStore creates new local store in path and returns it
+// It fails with error if the file in path could not be created
+func NewStore(path string) (*Local, error) {
 	// Crete directory structure
-	if err := os.MkdirAll(filepath.Base(path), 0755); err != nil {
+	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return nil, err
 	}
 	// create tile in path

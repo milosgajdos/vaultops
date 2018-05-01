@@ -1,0 +1,15 @@
+mode: set
+github.com/milosgajdos83/vaultops/store/aws/s3.go:25.59,33.2 3 1
+github.com/milosgajdos83/vaultops/store/aws/s3.go:36.27,38.16 2 1
+github.com/milosgajdos83/vaultops/store/aws/s3.go:42.2,42.31 1 1
+github.com/milosgajdos83/vaultops/store/aws/s3.go:38.16,40.3 1 0
+github.com/milosgajdos83/vaultops/store/aws/s3.go:46.53,48.16 2 1
+github.com/milosgajdos83/vaultops/store/aws/s3.go:53.2,58.16 2 1
+github.com/milosgajdos83/vaultops/store/aws/s3.go:62.2,62.12 1 1
+github.com/milosgajdos83/vaultops/store/aws/s3.go:48.16,50.3 1 0
+github.com/milosgajdos83/vaultops/store/aws/s3.go:58.16,60.3 1 1
+github.com/milosgajdos83/vaultops/store/aws/s3.go:66.55,68.16 2 1
+github.com/milosgajdos83/vaultops/store/aws/s3.go:73.2,77.16 2 1
+github.com/milosgajdos83/vaultops/store/aws/s3.go:81.2,81.12 1 1
+github.com/milosgajdos83/vaultops/store/aws/s3.go:68.16,70.3 1 0
+github.com/milosgajdos83/vaultops/store/aws/s3.go:77.16,79.3 1 1
