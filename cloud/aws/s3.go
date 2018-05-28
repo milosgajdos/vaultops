@@ -76,9 +76,15 @@ func (s *S3) Read(data []byte) (int, error) {
 		if err != nil {
 			return 0, err
 		}
+
 		s.readReady = true
 		s.bufReader = bytes.NewBuffer(buf.Bytes())
 	}
 
-	return s.bufReader.Read(data)
+	n, err := s.bufReader.Read(data)
+	if err != nil {
+		s.readReady = false
+	}
+
+	return n, err
 }

@@ -8,11 +8,11 @@ import (
 
 // GCS is Google Cloud Storage client
 type GCS struct {
-	client *storage.Client
-	bucket string
-	key    string
-	read   bool
-	reader *storage.Reader
+	client    *storage.Client
+	bucket    string
+	key       string
+	readReady bool
+	reader    *storage.Reader
 }
 
 // NewGCS creates new GCS client
@@ -23,10 +23,10 @@ func NewGCS(bucket, key string) (*GCS, error) {
 	}
 
 	return &GCS{
-		client: client,
-		bucket: bucket,
-		key:    key,
-		read:   false,
+		client:    client,
+		bucket:    bucket,
+		key:       key,
+		readReady: false,
 	}, nil
 }
 
@@ -41,15 +41,20 @@ func (s *GCS) Write(data []byte) (int, error) {
 
 // Read reads data from GCS bucket
 func (s *GCS) Read(data []byte) (int, error) {
-	if !s.read {
+	if !s.readReady {
 		var err error
 		ctx := context.Background()
 		s.reader, err = s.client.Bucket(s.bucket).Object(s.key).NewReader(ctx)
 		if err != nil {
 			return 0, err
 		}
-		s.read = true
+		s.readReady = true
 	}
 
-	return s.reader.Read(data)
+	n, err := s.reader.Read(data)
+	if err != nil {
+		s.readReady = false
+	}
+
+	return n, err
 }
