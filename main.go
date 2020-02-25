@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/milosgajdos83/vaultops/command"
+	"github.com/milosgajdos/vaultops/command"
 	"github.com/mitchellh/cli"
 )
 

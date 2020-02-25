@@ -1,9 +1,9 @@
 # vaultops
 
-[![GoDoc](https://godoc.org/github.com/milosgajdos83/vaultops?status.svg)](https://godoc.org/github.com/milosgajdos83/vaultops)
+[![GoDoc](https://godoc.org/github.com/milosgajdos/vaultops?status.svg)](https://godoc.org/github.com/milosgajdos/vaultops)
 [![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Travis CI](https://travis-ci.org/milosgajdos83/vaultops.svg?branch=master)](https://travis-ci.org/milosgajdos83/vaultops)
-[![Go Report Card](https://goreportcard.com/badge/milosgajdos83/vaultops)](https://goreportcard.com/report/github.com/milosgajdos83/vaultops)
+[![Travis CI](https://travis-ci.org/milosgajdos/vaultops.svg?branch=master)](https://travis-ci.org/milosgajdos/vaultops)
+[![Go Report Card](https://goreportcard.com/badge/milosgajdos/vaultops)](https://goreportcard.com/report/github.com/milosgajdos/vaultops)
 
 `vaultops` is a command line utility which aims to simplify [vault](https://www.vaultproject.io/) server setup. At the moment it support automatic initialization and unsealing.
 
@@ -26,31 +26,31 @@ The above listed tasks are usually performed using the `vault` command line clie
 Get the project:
 
 ```console
-$ go get -u github.com/milosgajdos83/vaultops
+$ go get -u github.com/milosgajdos/vaultops
 ```
 
 Get project dependencies:
 
 ```console
-$ cd $GOPATH/github.com/milosgajdos83/vaultops && make dep
+$ cd $GOPATH/github.com/milosgajdos/vaultops && make dep
 ```
 
 Run the tests
 
 ```console
-$ cd $GOPATH/src/github.com/milosgajdos83/vaultops
+$ cd $GOPATH/src/github.com/milosgajdos/vaultops
 $ make test
-for pkg in github.com/milosgajdos83/vaultops github.com/milosgajdos83/vaultops/cipher github.com/milosgajdos83/vaultops/cloud/aws github.com/milosgajdos83/vaultops/cloud/gcp github.com/milosgajdos83/vaultops/command github.com/milosgajdos83/vaultops/manifest github.com/milosgajdos83/vaultops/store github.com/milosgajdos83/vaultops/store/local; do \
+for pkg in github.com/milosgajdos/vaultops github.com/milosgajdos/vaultops/cipher github.com/milosgajdos/vaultops/cloud/aws github.com/milosgajdos/vaultops/cloud/gcp github.com/milosgajdos/vaultops/command github.com/milosgajdos/vaultops/manifest github.com/milosgajdos/vaultops/store github.com/milosgajdos/vaultops/store/local; do \
 		go test -coverprofile="../../../$pkg/coverage.txt" -covermode=atomic $pkg || exit; \
 	done
-?   	github.com/milosgajdos83/vaultops	[no test files]
-?   	github.com/milosgajdos83/vaultops/cipher	[no test files]
-ok  	github.com/milosgajdos83/vaultops/cloud/aws	0.022s	coverage: 93.5% of statements
-ok  	github.com/milosgajdos83/vaultops/cloud/gcp	0.024s	coverage: 28.1% of statements
-ok  	github.com/milosgajdos83/vaultops/command	1.478s	coverage: 15.4% of statements
-ok  	github.com/milosgajdos83/vaultops/manifest	0.022s	coverage: 100.0% of statements
-ok  	github.com/milosgajdos83/vaultops/store	0.020s	coverage: 100.0% of statements
-ok  	github.com/milosgajdos83/vaultops/store/local	0.020s	coverage: 88.9% of statements
+?   	github.com/milosgajdos/vaultops	[no test files]
+?   	github.com/milosgajdos/vaultops/cipher	[no test files]
+ok  	github.com/milosgajdos/vaultops/cloud/aws	0.022s	coverage: 93.5% of statements
+ok  	github.com/milosgajdos/vaultops/cloud/gcp	0.024s	coverage: 28.1% of statements
+ok  	github.com/milosgajdos/vaultops/command	1.478s	coverage: 15.4% of statements
+ok  	github.com/milosgajdos/vaultops/manifest	0.022s	coverage: 100.0% of statements
+ok  	github.com/milosgajdos/vaultops/store	0.020s	coverage: 100.0% of statements
+ok  	github.com/milosgajdos/vaultops/store/local	0.020s	coverage: 88.9% of statements
 ```
 
 Build the binary:

@@ -6,9 +6,9 @@ import (
 	"strings"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/milosgajdos83/vaultops/cipher"
-	"github.com/milosgajdos83/vaultops/manifest"
-	"github.com/milosgajdos83/vaultops/store"
+	"github.com/milosgajdos/vaultops/cipher"
+	"github.com/milosgajdos/vaultops/manifest"
+	"github.com/milosgajdos/vaultops/store"
 )
 
 // InitCommand implements vault initialization

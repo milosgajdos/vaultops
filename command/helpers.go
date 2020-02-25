@@ -3,11 +3,11 @@ package command
 import (
 	"fmt"
 
-	"github.com/milosgajdos83/vaultops/cipher"
-	"github.com/milosgajdos83/vaultops/cloud/aws"
-	"github.com/milosgajdos83/vaultops/cloud/gcp"
-	"github.com/milosgajdos83/vaultops/store"
-	"github.com/milosgajdos83/vaultops/store/local"
+	"github.com/milosgajdos/vaultops/cipher"
+	"github.com/milosgajdos/vaultops/cloud/aws"
+	"github.com/milosgajdos/vaultops/cloud/gcp"
+	"github.com/milosgajdos/vaultops/store"
+	"github.com/milosgajdos/vaultops/store/local"
 )
 
 // VaultKeyStore creates vault keys store

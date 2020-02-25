@@ -14,16 +14,12 @@ clean:
 	rm -rf $(BUILDPATH)
 	$(CLEAN)
 
-godep:
-	go get -u github.com/golang/dep/cmd/dep
-
-dep: godep
-	dep ensure
+dep:
+	go get ./...
 
 check:
 	for pkg in ${PACKAGES}; do \
 		go vet $$pkg || exit ; \
-		golint $$pkg || exit ; \
 	done
 
 test:
@@ -33,5 +29,7 @@ test:
 
 build: builddir
 	go build -ldflags="-s -w" -o "$(BUILDPATH)/vaultops"
+
+all: dep check test build
 
 .PHONY: clean

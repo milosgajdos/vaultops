@@ -4,8 +4,8 @@ import (
 	"encoding/json"
 	"io/ioutil"
 
-	"github.com/milosgajdos83/vaultops/cipher"
-	"github.com/milosgajdos83/vaultops/store"
+	"github.com/milosgajdos/vaultops/cipher"
+	"github.com/milosgajdos/vaultops/store"
 )
 
 // VaultKeys stores vault root token and master keys

@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/hashicorp/vault/api"
-	"github.com/milosgajdos83/vaultops/cipher"
-	"github.com/milosgajdos83/vaultops/manifest"
+	"github.com/milosgajdos/vaultops/cipher"
+	"github.com/milosgajdos/vaultops/manifest"
 )
 
 // UnsealCommand implements vault unsealing
