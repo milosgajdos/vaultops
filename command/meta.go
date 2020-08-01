@@ -214,7 +214,7 @@ func GeneralOptionsUsage() string {
   -storage-bucket         Remote storage bucket (in case of K8s this means K8s Secret name)
   -storage-key            Remote storage key (in case of K8s this means K8s Secret key)
   -key-store=local	  Type of store where to loook up vault keys (default: local)
-    			  Local store is ./.local/vault.json
+                          Available stores: s3, gcp, k8s (k8s means Kubernetes secret)
   -key-local-path         Path to locally stored keys
   -namespace              Kubernetes namespace (only used when k8s store is requested)
 `

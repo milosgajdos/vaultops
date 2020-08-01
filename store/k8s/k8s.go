@@ -27,6 +27,8 @@ type K8s struct {
 	secret string
 	key    string
 	ns     string
+	reader *bytes.Buffer
+	ready  bool
 }
 
 // NewStore creates a new Kubernetes secret store handle and returns it.
@@ -52,11 +54,12 @@ func NewStore(secret, key, ns string) (*K8s, error) {
 		secret: secret,
 		key:    key,
 		ns:     ns,
-	}, fmt.Errorf("not implemented")
+		ready:  false,
+	}, nil
 }
 
 // Write writes data to K8s store
-func (k *K8s) Write(b []byte) (n int, err error) {
+func (k *K8s) Write(b []byte) (int, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
 	defer cancel()
 
@@ -74,7 +77,7 @@ func (k *K8s) Write(b []byte) (n int, err error) {
 		}
 
 		if _, err := k.client.CoreV1().Secrets(k.ns).Create(ctx, s, metav1.CreateOptions{}); err != nil {
-			return 0, fmt.Errorf("failed to create k8s secret %s in namespace %s: %v", k.secret, k.ns, err)
+			return 0, fmt.Errorf("failed to create secret %s in namespace %s: %v", k.secret, k.ns, err)
 		}
 
 		return len(b), nil
@@ -85,7 +88,7 @@ func (k *K8s) Write(b []byte) (n int, err error) {
 		secret.Data[k.key] = b
 
 		if _, err := k.client.CoreV1().Secrets(k.ns).Update(ctx, secret, metav1.UpdateOptions{}); err != nil {
-			return 0, fmt.Errorf("failed to update k8s secret %s in namespace %s: %v", k.secret, k.ns, err)
+			return 0, fmt.Errorf("failed to update secret %s in namespace %s: %v", k.secret, k.ns, err)
 		}
 	}
 
@@ -93,16 +96,29 @@ func (k *K8s) Write(b []byte) (n int, err error) {
 }
 
 // Read reads data from k8s store
-func (k *K8s) Read(b []byte) (n int, err error) {
-	ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
-	defer cancel()
+func (k *K8s) Read(b []byte) (int, error) {
+	if !k.ready {
+		ctx, cancel := context.WithTimeout(context.Background(), DefaultTimeout)
+		defer cancel()
 
-	_, err = k.client.CoreV1().Secrets(k.ns).Get(ctx, k.secret, metav1.GetOptions{})
+		secret, err := k.client.CoreV1().Secrets(k.ns).Get(ctx, k.secret, metav1.GetOptions{})
 
-	if errors.IsNotFound(err) {
-		return 0, fmt.Errorf("could not read k8s secret %s in namespace %s: %v", k.secret, k.ns, err)
+		if errors.IsNotFound(err) {
+			return 0, fmt.Errorf("failed to find secret %s in namespace %s: %v", k.secret, k.ns, err)
+		}
+
+		if err != nil {
+			return 0, fmt.Errorf("failed to read secret %s in namespace %s: %v", k.secret, k.ns, err)
+		}
+
+		k.reader = bytes.NewBuffer(secret.Data[k.key])
+		k.ready = true
 	}
 
-	// TODO: figure this out
-	return 0, fmt.Errorf("not implemented")
+	n, err := k.reader.Read(b)
+	if err != nil {
+		k.ready = false
+	}
+
+	return n, err
 }

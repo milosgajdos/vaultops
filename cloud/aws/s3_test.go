@@ -66,7 +66,7 @@ func TestRead(t *testing.T) {
 	assert.EqualError(t, err, "EOF")
 
 	// error downloading; need to reset
-	s3Client.readReady = false
+	s3Client.ready = false
 	c.DownloadFunc = func(w io.WriterAt, in *s3.GetObjectInput, opts ...func(*s3manager.Downloader)) (int64, error) {
 		return 0, fmt.Errorf("Download Error")
 	}

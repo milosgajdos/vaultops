@@ -29,14 +29,7 @@ Get the project:
 $ go get -u github.com/milosgajdos/vaultops
 ```
 
-Get project dependencies:
-
-```console
-$ cd $GOPATH/github.com/milosgajdos/vaultops && make dep
-```
-
 Run the tests
-
 ```console
 $ cd $GOPATH/src/github.com/milosgajdos/vaultops
 $ make test
@@ -54,7 +47,6 @@ ok  	github.com/milosgajdos/vaultops/store/local	0.020s	coverage: 88.9% of state
 ```
 
 Build the binary:
-
 ```console
 $ make build
 mkdir -p ./_build
@@ -62,7 +54,6 @@ go build -ldflags="-s -w" -o "./_build/vaultops"
 ```
 
 Once you have pulled in all the project dependencies you can also build the binary running the familiar command:
-
 ```console
 $ go build -ldflags="-s -w"
 ```
@@ -81,7 +72,7 @@ Available commands are:
 
 `vaultops` reads **the same environment variables** as `vault` utility, so you can rely on the familiar `$VAULT_` environment variables when specifying the `vault` server URLs and tokens.
 
-At the moment only `init` and `unseal` commands are implemented. The plan is to add many more like `secrets` etc.
+At the moment only `init` and `unseal` commands are implemented. The plan is to add a few more.
 
 ## vaultops init
 
@@ -123,7 +114,7 @@ init Options:
   -config			Path to a config file which contains a list of vault servers
 ```
 
-When run with default options, `init` will store `vault` keys **UNENCRYPTED** on your local filesystem in `.local` directory of your **current working directory** in a predefied `json` format which looks as follows:
+When run with the default options, `init` command will store the `vault` keys **UNENCRYPTED** on your local filesystem in `.local` directory of your **current working directory** in a predefied `json` format which looks as follows:
 
 ```json
 {
@@ -173,7 +164,7 @@ By default `vaultops` tries to "redact" all sensitive information printed to `st
 
 ### Vault Key storage
 
-`vaultops` allows you to store `vault` keys remotely either in [AWS S3](https://aws.amazon.com/s3/) or [Google Cloud Storage](https://cloud.google.com/storage/). You can choose the remote storage option via `-key-store` command line switch. Here is an example how to initialize `vault` using AWS KMS and store the keys in AWS S3 bucket of your choice:
+`vaultops` allows you to store `vault` keys remotely either in [AWS S3](https://aws.amazon.com/s3/), [Google Cloud Storage](https://cloud.google.com/storage/) or [kubernetes secrets](https://kubernetes.io/docs/concepts/configuration/secret/). You can choose the appropriate remote storage option via `-key-store` flag. Here is an example how to initialize `vault` using AWS KMS and store the keys in AWS S3 bucket of your choice:
 
 ```console
 $ export VAULT_ADDR="http://${HostIP}:8200"
@@ -183,6 +174,8 @@ $ ./vaultops init -key-store="s3" \
 		  -kms-provider="aws" \
 		  -aws-kms-id="your-kms-id"
 ```
+
+**NOTE:** when using kubernetes secrets storage, you can also specify a namespace for the secret; the default value is set to `default` namespace
 
 ## vaultops unseal
 
