@@ -57,7 +57,7 @@ func (c *UnsealCommand) Run(args []string) int {
 	}
 	// read vault keys
 	vk := new(VaultKeys)
-	if err := vk.Read(s, cphr); err != nil {
+	if _, err := vk.Read(s, cphr); err != nil {
 		c.UI.Error(fmt.Sprintf("Failed to read vault keys: %v", err))
 		return 1
 	}

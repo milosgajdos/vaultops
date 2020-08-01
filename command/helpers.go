@@ -7,6 +7,7 @@ import (
 	"github.com/milosgajdos/vaultops/cloud/aws"
 	"github.com/milosgajdos/vaultops/cloud/gcp"
 	"github.com/milosgajdos/vaultops/store"
+	"github.com/milosgajdos/vaultops/store/k8s"
 	"github.com/milosgajdos/vaultops/store/local"
 )
 
@@ -28,8 +29,13 @@ func VaultKeyStore(storeType string, m *Meta) (s store.Store, err error) {
 		if err != nil {
 			return nil, err
 		}
+	case "k8s":
+		s, err = k8s.NewStore(m.flagStorageBucket, m.flagStorageKey)
+		if err != nil {
+			return nil, err
+		}
 	default:
-		return nil, fmt.Errorf("Unsupported store: %s", storeType)
+		return nil, fmt.Errorf("unsupported store: %s", storeType)
 	}
 
 	return s, nil
@@ -49,7 +55,7 @@ func VaultKeyCipher(m *Meta) (c cipher.Cipher, err error) {
 			return nil, err
 		}
 	default:
-		return nil, fmt.Errorf("Unsupported cipher provider: %s", m.flagKMSProvider)
+		return nil, fmt.Errorf("unsupported cipher provider: %s", m.flagKMSProvider)
 	}
 
 	return c, nil

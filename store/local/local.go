@@ -10,14 +10,13 @@ type Local struct {
 	f *os.File
 }
 
-// NewStore creates new local store in path and returns it
-// It fails with error if the file in path could not be created
+// NewStore creates new local store in path and returns it.
+// It fails with error if the file in path could not be created.
 func NewStore(path string) (*Local, error) {
-	// Crete directory structure
 	if err := os.MkdirAll(filepath.Dir(path), 0755); err != nil {
 		return nil, err
 	}
-	// create tile in path
+
 	filePath := filepath.Clean(path)
 	f, err := os.OpenFile(filePath, os.O_RDWR|os.O_CREATE, 0600)
 	if err != nil {
