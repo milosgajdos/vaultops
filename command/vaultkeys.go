@@ -17,10 +17,10 @@ type VaultKeys struct {
 }
 
 // Write writes vault keys in store and encrypts them with cipher c
-func (vk *VaultKeys) Write(s store.Store, c cipher.Cipher) (int, error) {
-	v := &VaultKeys{vk.RootToken, vk.MasterKeys}
+func (v *VaultKeys) Write(s store.Store, c cipher.Cipher) (int, error) {
+	k := &VaultKeys{v.RootToken, v.MasterKeys}
 	// encode vault keys into json
-	data, err := json.Marshal(v)
+	data, err := json.Marshal(k)
 	if err != nil {
 		return 0, err
 	}
@@ -29,36 +29,36 @@ func (vk *VaultKeys) Write(s store.Store, c cipher.Cipher) (int, error) {
 		return s.Write(data)
 	}
 
-	encData, err := c.Encrypt(data)
+	enc, err := c.Encrypt(data)
 	if err != nil {
 		return 0, err
 	}
 
-	return s.Write(encData)
+	return s.Write(enc)
 }
 
-// Read reads vault keys from store and returns them decrypted
-// It modifies the keys of the receiver
-func (vk *VaultKeys) Read(s store.Store, c cipher.Cipher) error {
+// Read reads vault keys from store, decrypts them and stores them in
+// its fields i.e. it modifies the keys stored in the receiver.
+func (v *VaultKeys) Read(s store.Store, c cipher.Cipher) (int, error) {
 	data, err := ioutil.ReadAll(s)
 	if err != nil {
-		return err
+		return 0, err
 	}
 
 	keys := data
 	if c != nil {
 		keys, err = c.Decrypt(data)
 		if err != nil {
-			return err
+			return 0, err
 		}
 	}
 
-	v := new(VaultKeys)
-	if err := json.Unmarshal(keys, v); err != nil {
-		return err
+	k := new(VaultKeys)
+	if err := json.Unmarshal(keys, k); err != nil {
+		return 0, err
 	}
-	vk.RootToken = v.RootToken
-	vk.MasterKeys = v.MasterKeys
+	v.RootToken = k.RootToken
+	v.MasterKeys = k.MasterKeys
 
-	return nil
+	return len(data), nil
 }

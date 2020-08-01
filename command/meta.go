@@ -43,7 +43,7 @@ const (
 )
 
 // Meta contains meta-options used by almost every command
-// This is a stipped version of vault meta struct
+// This is a stripped down version of vault meta struct.
 type Meta struct {
 	// vault client token
 	token string
@@ -67,6 +67,7 @@ type Meta struct {
 	flagStorageBucket   string
 	flagStorageKey      string
 	flagKeyLocalPath    string
+	flagNamespace       string
 }
 
 // FlagSet returns a FlagSet with the common flags that every
@@ -75,6 +76,7 @@ func (m *Meta) FlagSet(name string, fs FlagSetFlags) *flag.FlagSet {
 	f := flag.NewFlagSet(name, flag.ContinueOnError)
 
 	storageLocalPath := filepath.Join(localDir, localFile)
+
 	// FlagSetServer tells us to enable the settings for selecting
 	// the server information.
 	if fs&FlagSetServer != 0 {
@@ -95,6 +97,7 @@ func (m *Meta) FlagSet(name string, fs FlagSetFlags) *flag.FlagSet {
 		f.StringVar(&m.flagStorageBucket, "storage-bucket", "", "")
 		f.StringVar(&m.flagStorageKey, "storage-key", "", "")
 		f.StringVar(&m.flagKeyLocalPath, "key-local-path", storageLocalPath, "")
+		f.StringVar(&m.flagNamespace, "namespace", "default", "")
 	}
 
 	return f
@@ -135,7 +138,7 @@ func (m *Meta) Config(address string) (*api.Config, error) {
 }
 
 // Client initializes vault api.Client and returns it or fails with error
-// or if mandatory options are missing. Ripped off (https://github.com/hashicorp/vault/blob/master/meta/meta.go#L74-L98)
+// This is heavily inspired by (https://github.com/hashicorp/vault/blob/master/meta/meta.go#L74-L98)
 func (m *Meta) Client(address, token string) (*api.Client, error) {
 	config, err := m.Config(address)
 	if err != nil {
@@ -208,11 +211,12 @@ func GeneralOptionsUsage() string {
   -gcp-kms-key-ring       GCP KMS key ring
   -gcp-kms-region     	  GCP region (eg. 'global', 'europe-west1')
   -gcp-kms-project  	  GCP project name
-  -storage-bucket         Cloud storage bucket
-  -storage-key            Cloud storage key
+  -storage-bucket         Remote storage bucket (in case of K8s this means K8s Secret name)
+  -storage-key            Remote storage key (in case of K8s this means K8s Secret key)
   -key-store=local	  Type of store where to loook up vault keys (default: local)
-    			  Local store is ./.local/vault.json
+                          Available stores: s3, gcp, k8s (k8s means Kubernetes secret)
   -key-local-path         Path to locally stored keys
+  -namespace              Kubernetes namespace (only used when k8s store is requested)
 `
 
 	return general

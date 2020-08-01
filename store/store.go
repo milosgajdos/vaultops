@@ -7,6 +7,14 @@ const (
 	ErrNotFound ErrorCode = iota + 1
 )
 
+// Store implements basic data store
+type Store interface {
+	// Write writes data to store
+	Write(p []byte) (int, error)
+	// Read reads data from store
+	Read(p []byte) (int, error)
+}
+
 // ErrorCode defines Store operation error code
 type ErrorCode int
 
@@ -36,12 +44,4 @@ func (e *Error) Error() string {
 	}
 
 	return fmt.Sprintf("Store error: %v", code)
-}
-
-// Store implements basic data store
-type Store interface {
-	// Write writes data to store
-	Write(p []byte) (int, error)
-	// Read reads data from store
-	Read(p []byte) (int, error)
 }

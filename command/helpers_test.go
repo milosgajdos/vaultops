@@ -50,7 +50,7 @@ func TestVaultKeyStore(t *testing.T) {
 	}{
 		{"local", m, nil},
 		{"s3", m, nil},
-		{"foobar", m, fmt.Errorf("Unsupported store: foobar")},
+		{"foobar", m, fmt.Errorf("unsupported store: foobar")},
 	}
 	defer os.Remove(filepath.Join(localDir, localFile))
 

@@ -18,10 +18,10 @@ type S3 struct {
 	downloader interface {
 		Download(io.WriterAt, *s3.GetObjectInput, ...func(*s3manager.Downloader)) (int64, error)
 	}
-	bucket    string
-	key       string
-	readReady bool
-	bufReader *bytes.Buffer
+	bucket string
+	key    string
+	ready  bool
+	reader *bytes.Buffer
 }
 
 // NewS3WithSession creates new AWS S3 client with session sess
@@ -34,7 +34,7 @@ func NewS3WithSession(bucket, key string, sess *session.Session) (*S3, error) {
 		downloader: downloader,
 		bucket:     bucket,
 		key:        key,
-		readReady:  false,
+		ready:      false,
 	}, nil
 }
 
@@ -66,7 +66,7 @@ func (s *S3) Write(data []byte) (int, error) {
 
 // Read reads data from S3 bucket
 func (s *S3) Read(data []byte) (int, error) {
-	if !s.readReady {
+	if !s.ready {
 		buf := &aws.WriteAtBuffer{}
 		// Write the contents of S3 Object to the file
 		_, err := s.downloader.Download(buf, &s3.GetObjectInput{
@@ -77,13 +77,13 @@ func (s *S3) Read(data []byte) (int, error) {
 			return 0, err
 		}
 
-		s.readReady = true
-		s.bufReader = bytes.NewBuffer(buf.Bytes())
+		s.reader = bytes.NewBuffer(buf.Bytes())
+		s.ready = true
 	}
 
-	n, err := s.bufReader.Read(data)
+	n, err := s.reader.Read(data)
 	if err != nil {
-		s.readReady = false
+		s.ready = false
 	}
 
 	return n, err

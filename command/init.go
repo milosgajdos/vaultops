@@ -24,7 +24,7 @@ func (c *InitCommand) Run(args []string) int {
 	var status bool
 	var threshold, shares int
 	var config string
-	// create command flags
+
 	flags := c.Meta.FlagSet("init", FlagSetDefault)
 	flags.Usage = func() { c.UI.Info(c.Help()) }
 	flags.BoolVar(&status, "status", false, "")
@@ -38,11 +38,10 @@ func (c *InitCommand) Run(args []string) int {
 	// get hosts against which we want to run init command
 	hosts, err := c.getRunHosts(config)
 	if err != nil {
-		c.UI.Error(fmt.Sprintf("Failed to read vault hosts: %v", err))
+		c.UI.Error(fmt.Sprintf("failed to read vault hosts: %v", err))
 		return 1
 	}
 
-	// if status is requested
 	if status {
 		return c.runInitStatus(hosts)
 	}
@@ -54,18 +53,20 @@ func (c *InitCommand) Run(args []string) int {
 		RecoveryShares:    shares,
 		RecoveryThreshold: threshold,
 	}
+
 	// create vault key store handle
 	s, err := VaultKeyStore(c.flagKeyStore, &c.Meta)
 	if err != nil {
-		c.UI.Error(fmt.Sprintf("Failed to initialize %s store: %v", c.flagKeyStore, err))
+		c.UI.Error(fmt.Sprintf("failed to initialize %s store: %v", c.flagKeyStore, err))
 		return 1
 	}
+
 	// if kms provider not empty, initialize cipher
 	var cphr cipher.Cipher
 	if c.flagKMSProvider != "" {
 		cphr, err = VaultKeyCipher(&c.Meta)
 		if err != nil {
-			c.UI.Error(fmt.Sprintf("Failed to create %s cipher: %v", c.flagKMSProvider, err))
+			c.UI.Error(fmt.Sprintf("failed to create %s cipher: %v", c.flagKMSProvider, err))
 			return 1
 		}
 	}
@@ -90,6 +91,7 @@ func (c *InitCommand) getRunHosts(config string) ([]string, error) {
 		if err != nil {
 			return nil, err
 		}
+
 		return hosts, nil
 	}
 
