@@ -1,44 +1,14 @@
 module github.com/milosgajdos/vaultops
 
-go 1.13
+go 1.14
 
 require (
-	cloud.google.com/go v0.23.0
-	github.com/armon/go-radix v0.0.0-20170727155443-1fca145dffbc
-	github.com/aws/aws-sdk-go v1.13.56
-	github.com/bgentry/speakeasy v0.1.0
-	github.com/davecgh/go-spew v1.1.0
-	github.com/fatih/color v1.7.0
-	github.com/go-ini/ini v1.37.0
-	github.com/golang/protobuf v1.1.0
-	github.com/golang/snappy v0.0.0-20170215233205-553a64147049
-	github.com/googleapis/gax-go v2.0.0+incompatible
-	github.com/hashicorp/errwrap v0.0.0-20141028054710-7554cd9344ce
-	github.com/hashicorp/go-cleanhttp v0.0.0-20171218145408-d5fe4b57a186
-	github.com/hashicorp/go-multierror v0.0.0-20171204182908-b7773ae21874
-	github.com/hashicorp/go-rootcerts v0.0.0-20160503143440-6bb64b370b90
-	github.com/hashicorp/go-sockaddr v0.0.0-20180207231636-7165ee14aff1
-	github.com/hashicorp/hcl v0.0.0-20180320202055-f40e974e75af
-	github.com/hashicorp/vault v0.10.1
-	github.com/jmespath/go-jmespath v0.0.0-20160202185014-0b12d6b521d8
-	github.com/mattn/go-colorable v0.0.9
-	github.com/mattn/go-isatty v0.0.3
-	github.com/mitchellh/cli v0.0.0-20180414170447-c48282d14eba
-	github.com/mitchellh/go-homedir v0.0.0-20180523094522-3864e76763d9
-	github.com/mitchellh/mapstructure v0.0.0-20180203102830-a4e142e9c047
-	github.com/pmezard/go-difflib v1.0.0
-	github.com/posener/complete v1.1.1
-	github.com/ryanuber/go-glob v0.0.0-20170128012129-256dc444b735
-	github.com/sethgrid/pester v0.0.0-20180227223404-ed9870dad317
-	github.com/stretchr/testify v1.2.1
-	go.opencensus.io v0.10.0
-	golang.org/x/net v0.0.0-20180524181706-dfa909b99c79
-	golang.org/x/oauth2 v0.0.0-20180528195736-8373c646843f
-	golang.org/x/sys v0.0.0-20180525142821-c11f84a56e43
-	golang.org/x/text v0.3.0
-	google.golang.org/api v0.0.0-20180528000431-8180fb51da87
-	google.golang.org/appengine v1.0.0
-	google.golang.org/genproto v0.0.0-20180523212516-694d95ba50e6
-	google.golang.org/grpc v1.12.0
-	gopkg.in/yaml.v2 v2.2.1
+	cloud.google.com/go/storage v1.10.0
+	github.com/aws/aws-sdk-go v1.33.17
+	github.com/hashicorp/vault/api v1.0.4
+	github.com/mitchellh/cli v1.1.1
+	github.com/stretchr/testify v1.5.1
+	golang.org/x/oauth2 v0.0.0-20200107190931-bf48bf16ab8d
+	google.golang.org/api v0.29.0
+	gopkg.in/yaml.v2 v2.3.0
 )
