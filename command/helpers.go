@@ -30,7 +30,7 @@ func VaultKeyStore(storeType string, m *Meta) (s store.Store, err error) {
 			return nil, err
 		}
 	case "k8s":
-		s, err = k8s.NewStore(m.flagStorageBucket, m.flagStorageKey)
+		s, err = k8s.NewStore(m.flagStorageBucket, m.flagStorageKey, m.flagNamespace)
 		if err != nil {
 			return nil, err
 		}

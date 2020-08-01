@@ -67,6 +67,7 @@ type Meta struct {
 	flagStorageBucket   string
 	flagStorageKey      string
 	flagKeyLocalPath    string
+	flagNamespace       string
 }
 
 // FlagSet returns a FlagSet with the common flags that every
@@ -96,6 +97,7 @@ func (m *Meta) FlagSet(name string, fs FlagSetFlags) *flag.FlagSet {
 		f.StringVar(&m.flagStorageBucket, "storage-bucket", "", "")
 		f.StringVar(&m.flagStorageKey, "storage-key", "", "")
 		f.StringVar(&m.flagKeyLocalPath, "key-local-path", storageLocalPath, "")
+		f.StringVar(&m.flagNamespace, "namespace", "default", "")
 	}
 
 	return f
@@ -214,6 +216,7 @@ func GeneralOptionsUsage() string {
   -key-store=local	  Type of store where to loook up vault keys (default: local)
     			  Local store is ./.local/vault.json
   -key-local-path         Path to locally stored keys
+  -namespace              Kubernetes namespace (only used when k8s store is requested)
 `
 
 	return general
