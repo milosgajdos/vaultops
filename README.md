@@ -1,11 +1,11 @@
-# vaultops
+# vaultops: automate vault setup
 
-[![GoDoc](https://godoc.org/github.com/milosgajdos/vaultops?status.svg)](https://godoc.org/github.com/milosgajdos/vaultops)
-[![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0)
-[![Travis CI](https://travis-ci.org/milosgajdos/vaultops.svg?branch=master)](https://travis-ci.org/milosgajdos/vaultops)
+[![Build Status](https://github.com/milosgajdos/vaultops/workflows/CI/badge.svg)](https://github.com/milosgajdos/vaultops/actions?query=workflow%3ACI)
+[![go.dev reference](https://img.shields.io/badge/go.dev-reference-007d9c?logo=go&logoColor=white&style=flat-square)](https://pkg.go.dev/github.com/milosgajdos/vaultops)
 [![Go Report Card](https://goreportcard.com/badge/milosgajdos/vaultops)](https://goreportcard.com/report/github.com/milosgajdos/vaultops)
+[![License](https://img.shields.io/:license-apache-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 
-`vaultops` is a command line utility which aims to simplify [vault](https://www.vaultproject.io/) server setup. At the moment it support automatic initialization and unsealing.
+`vaultops` is a command line utility which aims to simplify [vault](https://www.vaultproject.io/) server setup. At the moment it supports automatic initialization and unsealing.
 
 # Motivation
 
@@ -280,6 +280,6 @@ Same rules apply when running `unseal` command.
 
 * bigger test coverage
 * plenty of room for refactoring
-* setting up secret backends
-* setting up secret backend roles
-* setting up policies
+* setting up `vault` secret backends
+* setting up `vault` secret backend roles
+* setting up `vault` policies
