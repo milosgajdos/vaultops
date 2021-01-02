@@ -131,7 +131,9 @@ func (m *Meta) Config(address string) (*api.Config, error) {
 			TLSServerName: "",
 			Insecure:      m.flagInsecure,
 		}
-		config.ConfigureTLS(t)
+		if err := config.ConfigureTLS(t); err != nil {
+			return nil, err
+		}
 	}
 
 	return config, nil

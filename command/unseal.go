@@ -62,7 +62,7 @@ func (c *UnsealCommand) Run(args []string) int {
 		return 1
 	}
 
-	c.UI.Info(fmt.Sprintf("Attempting to unseal vault cluster:"))
+	c.UI.Info("Attempting to unseal vault cluster:")
 	for _, host := range hosts {
 		c.UI.Info(fmt.Sprintf("\t%s", host))
 	}
@@ -138,7 +138,7 @@ func (c *UnsealCommand) runSealStatus(hosts []string) int {
 // unseal action requires vault root token to be supplied via keys as well as unseal keys
 func (c *UnsealCommand) runUnseal(hosts []string, vk *VaultKeys) int {
 	if vk.RootToken == "" || vk.MasterKeys == nil {
-		c.UI.Error(fmt.Sprintf("No vault keys providedd"))
+		c.UI.Error("No vault keys providedd")
 		return 1
 	}
 
@@ -217,7 +217,7 @@ func (c *UnsealCommand) runUnseal(hosts []string, vk *VaultKeys) int {
 		return 1
 	}
 
-	c.UI.Info(fmt.Sprintf("Vault successfully unsealed"))
+	c.UI.Info("Vault successfully unsealed")
 
 	return 0
 }

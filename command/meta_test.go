@@ -13,11 +13,11 @@ import (
 var (
 	// default test values
 	metaTest    *Meta
+	fClientCert string
+	fClientKey  string
+	fCACert     string
+	fCAPath     string
 	fAddr       = "http://127.0.0.1:8200"
-	fCACert     = "./ca/ca.pem"
-	fCAPath     = "./ca/"
-	fClientCert = "./ca/client.crt"
-	fClientKey  = "./ca/client.key"
 	fInsecure   = false
 )
 
@@ -66,7 +66,7 @@ func TestFlagSet(t *testing.T) {
 		var m Meta
 		fs := m.FlagSet("foo", tc.Flags)
 
-		actual := make([]string, 0, 0)
+		actual := make([]string, 0)
 		fs.VisitAll(func(f *flag.Flag) {
 			actual = append(actual, f.Name)
 		})

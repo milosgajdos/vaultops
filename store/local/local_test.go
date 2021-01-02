@@ -22,6 +22,7 @@ func TestNewStore(t *testing.T) {
 	fileName = "passwd"
 	s, err = NewStore(filepath.Join(dir, fileName))
 	assert.Error(t, err)
+	assert.Nil(t, s)
 }
 
 func TestWriteRead(t *testing.T) {
@@ -42,6 +43,7 @@ func TestWriteRead(t *testing.T) {
 	assert.NoError(t, s.f.Close())
 
 	s, err = NewStore(path)
+	assert.NoError(t, err)
 	bufRead := make([]byte, len(data))
 	n, err = s.Read(bufRead)
 	assert.NoError(t, err)

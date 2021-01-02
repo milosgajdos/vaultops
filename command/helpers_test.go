@@ -2,29 +2,12 @@ package command
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"testing"
 
 	"github.com/stretchr/testify/assert"
 )
-
-// makeTestFile creates a temporary test file and writes data into it
-// It returns full path to newly created path  or error if the file fails to be created
-func makeTestFile(data []byte) (string, error) {
-	// create temp file for testing
-	f, err := ioutil.TempFile("", "test")
-	if err != nil {
-		return "", err
-	}
-	// write data to temp file
-	if _, err := f.Write(data); err != nil {
-		return "", err
-	}
-
-	return f.Name(), nil
-}
 
 func makeTestMeta() *Meta {
 	return &Meta{

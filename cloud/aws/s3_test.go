@@ -38,14 +38,15 @@ func TestWrite(t *testing.T) {
 	c.UploadFunc = func(in *s3manager.UploadInput, opts ...func(*s3manager.Uploader)) (*s3manager.UploadOutput, error) {
 		return &s3manager.UploadOutput{Location: "awsLocation"}, nil
 	}
-	n, err := s3Client.Write(data)
+
+	_, err := s3Client.Write(data)
 	assert.NoError(t, err)
 
 	// error uploading
 	c.UploadFunc = func(in *s3manager.UploadInput, opts ...func(*s3manager.Uploader)) (*s3manager.UploadOutput, error) {
 		return nil, fmt.Errorf("Upload Error")
 	}
-	n, err = s3Client.Write(data)
+	n, err := s3Client.Write(data)
 	assert.EqualError(t, err, "Upload Error")
 	assert.Equal(t, n, 0)
 }

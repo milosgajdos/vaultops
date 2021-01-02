@@ -108,6 +108,6 @@ func TestGetHosts(t *testing.T) {
 	}
 
 	// unsupported action causes error
-	hosts, err = m.GetHosts("foobar")
+	_, err = m.GetHosts("foobar")
 	assert.Error(t, err)
 }

@@ -29,6 +29,9 @@ func NewKMS(project, location, keyring, cryptoKey string) (*KMS, error) {
 		return nil, fmt.Errorf("Failed to create Google OAuth client: %s", err.Error())
 	}
 
+	// TODO: update Google API module and change this to something like
+	// NewService(ctx, option.WithTokenSource(config.TokenSource(ctx, token)))
+	// nolint:staticcheck
 	client, err := gcp.New(oauth)
 	if err != nil {
 		return nil, fmt.Errorf("Failed to create GCP CloudKMS client: %s", err.Error())

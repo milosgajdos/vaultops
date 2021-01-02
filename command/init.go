@@ -71,7 +71,7 @@ func (c *InitCommand) Run(args []string) int {
 		}
 	}
 
-	c.UI.Info(fmt.Sprintf("Attempting to initialize vault:"))
+	c.UI.Info("Attempting to initialize vault:")
 	for _, host := range hosts {
 		c.UI.Info(fmt.Sprintf("\t%s", host))
 	}
@@ -201,14 +201,14 @@ func (c *InitCommand) runInit(hosts []string, req *api.InitRequest, s store.Stor
 			c.UI.Error(fmt.Sprintf("Failed to store vault keys: %v", err))
 			return 1
 		}
-		c.UI.Info(fmt.Sprintf("Storing Vault keys successul"))
+		c.UI.Info("Storing Vault keys successul")
 	}
 
 	if errStatus {
 		return 1
 	}
 
-	c.UI.Info(fmt.Sprintf("Vault successfully initialized"))
+	c.UI.Info("Vault successfully initialized")
 	return 0
 }
 
